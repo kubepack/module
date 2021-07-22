@@ -1,0 +1,17 @@
+domain: kubepack.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: module
+repo: kubepack.dev/module
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kubepack.com
+  group: pkg
+  kind: Module
+  path: kubepack.dev/module/apis/pkg/v1alpha1
+  version: v1alpha1
+version: "3"
