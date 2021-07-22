@@ -1,0 +1,61 @@
+apiVersion: pkg.kubepack.com/v1alpha1
+kind: Module
+metadata:
+  creationTimestamp: null
+  name: myflow
+  namespace: demo
+spec:
+  actions:
+  - name: first
+    overrideValues: null
+    prerequisites:
+      required_resources:
+      - group: apps
+        resource: deployments
+        version: v1
+    readiness_criteria:
+      required_resources: null
+      timeout: 0s
+      wait_for_reconciled: true
+    releaseName: first
+    url: https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/
+    version: 0.1.0
+  - name: third
+    overrideValues:
+    - from:
+        paths: null
+        src:
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: '{{ .Release.Name }}'
+              app.kubernetes.io/name: '{{ .Release.Name }}'
+          target:
+            apiVersion: v1
+            kind: Pod
+        use_release: first
+      values:
+      - key: first.name
+        path: .metadata.name
+        type: string
+      - key: first.port
+        pathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}'
+        type: string
+    prerequisites:
+      required_resources:
+      - group: apps
+        resource: deployments
+        version: v1
+    readiness_criteria:
+      required_resources: null
+      timeout: 0s
+      wait_for_reconciled: true
+    releaseName: third
+    url: https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/
+    version: 0.1.0
+  edge_list:
+  - connection:
+      type: ""
+    dst: {}
+    name: ""
+    src: {}
+status: {}
