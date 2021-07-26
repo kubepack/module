@@ -39,12 +39,28 @@ spec:
               actions:
                 items:
                   properties:
+                    chartRef:
+                      description: ChartRepoRef references to a single version of
+                        a Chart
+                      properties:
+                        name:
+                          type: string
+                        url:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - name
+                      - url
+                      - version
+                      type: object
                     name:
+                      description: Also the release name
                       type: string
                     overrideValues:
                       items:
                         properties:
-                          from:
+                          objref:
                             properties:
                               paths:
                                 items:
@@ -132,17 +148,14 @@ spec:
                                           updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                                         type: string
                                     type: object
+                                  useAction:
+                                    type: string
                                 required:
                                 - target
+                                - useAction
                                 type: object
-                              use_release:
-                                description: Use the values from that release == action
-                                  to render templates
-                                type: string
                             required:
-                            - paths
                             - src
-                            - use_release
                             type: object
                           values:
                             items:
@@ -150,37 +163,43 @@ spec:
                                 string like in --set keys? Keep is such that we can
                                 always generate helm equivalent command
                               properties:
+                                fieldref:
+                                  properties:
+                                    fieldPath:
+                                      description: Directly use path from object
+                                      type: string
+                                    fieldPathTemplate:
+                                      description: 'FieldPathTemplate is a Go text
+                                        template that will be evaluated to determine
+                                        cell value. Users can use JSONPath expression
+                                        to extract nested fields and apply template
+                                        functions from Masterminds/sprig library.
+                                        The template function for JSON path is called
+                                        `jp`. Example: {{ jp "{.a.b}" . }} or {{ jp
+                                        "{.a.b}" true }}, if json output is desired
+                                        from JSONPath parser'
+                                      type: string
+                                    type:
+                                      description: string, nil, null
+                                      type: string
+                                  required:
+                                  - type
+                                  type: object
                                 key:
                                   type: string
-                                path:
-                                  description: Directly use path from object
-                                  type: string
-                                pathTemplate:
-                                  description: 'PathTemplate is a Go text template
-                                    that will be evaluated to determine cell value.
-                                    Users can use JSONPath expression to extract nested
-                                    fields and apply template functions from Masterminds/sprig
-                                    library. The template function for JSON path is
-                                    called `jp`. Example: {{ jp "{.a.b}" . }} or {{
-                                    jp "{.a.b}" true }}, if json output is desired
-                                    from JSONPath parser'
-                                  type: string
-                                type:
-                                  description: string, nil, null
-                                  type: string
                               required:
+                              - fieldref
                               - key
-                              - type
                               type: object
                             type: array
                         required:
-                        - from
+                        - objref
                         - values
                         type: object
                       type: array
                     prerequisites:
                       properties:
-                        required_resources:
+                        requiredResources:
                           items:
                             description: GroupVersionResource unambiguously identifies
                               a resource.  It doesn't anonymously include GroupVersion
@@ -199,13 +218,11 @@ spec:
                             - version
                             type: object
                           type: array
-                      required:
-                      - required_resources
                       type: object
-                    readiness_criteria:
+                    readinessCriteria:
                       description: https://github.com/tamalsaha/kstatus-demo
                       properties:
-                        required_resources:
+                        requiredResources:
                           items:
                             description: GroupVersionResource unambiguously identifies
                               a resource.  It doesn't anonymously include GroupVersion
@@ -226,7 +243,7 @@ spec:
                           type: array
                         timeout:
                           type: string
-                        wait_for_reconciled:
+                        waitForReconciled:
                           description: List objects for which to wait to reconcile
                             using kstatus == Current Same as helm --wait
                           type: boolean
@@ -313,34 +330,21 @@ spec:
                             type: object
                           type: array
                       required:
-                      - required_resources
                       - timeout
-                      - wait_for_reconciled
+                      - waitForReconciled
                       type: object
-                    releaseName:
-                      description: Also the action name
-                      type: string
-                    url:
-                      type: string
                     valuesFile:
                       type: string
                     valuesPatch:
                       description: 'RFC 6902 compatible json patch. ref: http://jsonpatch.com'
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
-                    version:
-                      type: string
                   required:
                   - name
-                  - overrideValues
-                  - prerequisites
-                  - readiness_criteria
-                  - releaseName
-                  - url
-                  - version
+                  - readinessCriteria
                   type: object
                 type: array
-              edge_list:
+              edgeList:
                 items:
                   properties:
                     connection:
@@ -472,7 +476,6 @@ spec:
                 type: array
             required:
             - actions
-            - edge_list
             type: object
           status:
             description: ModuleStatus defines the observed state of Module

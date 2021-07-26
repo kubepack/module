@@ -87,7 +87,7 @@ func (e *ActionRunner) Apply() *ActionRunner {
 		return e
 	}
 
-	chrt, err := lib.DefaultRegistry.GetChart(e.action.URL, e.action.Name, e.action.Version)
+	chrt, err := lib.DefaultRegistry.GetChart(e.action.ChartRef.URL, e.action.Name, e.action.ChartRef.Version)
 	if err != nil {
 		e.err = err
 		return e
@@ -108,17 +108,24 @@ func (e *ActionRunner) Apply() *ActionRunner {
 	}
 
 	for _, o := range e.action.ValueOverrides {
-		selector := o.From.Src.Selector
-		name := o.From.Src.Name
+		selector := o.ObjRef.Src.Selector
+		name := o.ObjRef.Src.Name
 
-		if o.From.UseRelease != "" && name == "" {
-			state, ok := ModuleStore[o.From.UseRelease]
+		if o.ObjRef.Src.UseAction != "" && name == "" {
+			state, ok := ModuleStore[o.ObjRef.Src.UseAction]
 			if !ok {
-				e.err = fmt.Errorf("can't find flow state for release %s", o.From.UseRelease)
+				e.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
+				return e
+			}
+			// initialize engine if needed
+			err = state.Init()
+			if err != nil {
+				e.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
+				klog.Errorln(err)
 				return e
 			}
 
-			tpl := o.From.Src.NameTemplate
+			tpl := o.ObjRef.Src.NameTemplate
 			if tpl != "" {
 				l := TemplateList{}
 				l.Add(tpl)
@@ -128,24 +135,17 @@ func (e *ActionRunner) Apply() *ActionRunner {
 					return e
 				}
 				name = TemplateList(result).Get(tpl)
-			} else if o.From.Src.Selector != nil {
+			} else if o.ObjRef.Src.Selector != nil {
 				l := TemplateList{}
-				for _, v := range o.From.Src.Selector.MatchLabels {
+				for _, v := range o.ObjRef.Src.Selector.MatchLabels {
 					l.Add(v)
 				}
-				for _, expr := range o.From.Src.Selector.MatchExpressions {
+				for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
 					for _, v := range expr.Values {
 						l.Add(v)
 					}
 				}
 
-				// initialize engine if needed
-				err = state.Init()
-				if err != nil {
-					e.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
-					klog.Errorln(err)
-					return e
-				}
 				l, err = state.Engine.Render(l)
 				if err != nil {
 					e.err = err
@@ -153,16 +153,16 @@ func (e *ActionRunner) Apply() *ActionRunner {
 				}
 
 				var sel metav1.LabelSelector
-				if o.From.Src.Selector.MatchLabels != nil {
+				if o.ObjRef.Src.Selector.MatchLabels != nil {
 					sel.MatchLabels = make(map[string]string)
 				}
-				for k, v := range o.From.Src.Selector.MatchLabels {
+				for k, v := range o.ObjRef.Src.Selector.MatchLabels {
 					sel.MatchLabels[k] = l.Get(v)
 				}
-				if len(o.From.Src.Selector.MatchExpressions) > 0 {
-					sel.MatchExpressions = make([]metav1.LabelSelectorRequirement, 0, len(o.From.Src.Selector.MatchExpressions))
+				if len(o.ObjRef.Src.Selector.MatchExpressions) > 0 {
+					sel.MatchExpressions = make([]metav1.LabelSelectorRequirement, 0, len(o.ObjRef.Src.Selector.MatchExpressions))
 				}
-				for _, expr := range o.From.Src.Selector.MatchExpressions {
+				for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
 					ne := expr
 					ne.Values = make([]string, 0, len(expr.Values))
 					for _, v := range expr.Values {
@@ -172,17 +172,16 @@ func (e *ActionRunner) Apply() *ActionRunner {
 				}
 				selector = &sel
 			}
-
 		}
 
 		obj, err := finder.Locate(&rsapi.ObjectLocator{
 			Src: rsapi.ObjectRef{
-				Target:    o.From.Src.Target,
+				Target:    o.ObjRef.Src.Target,
 				Selector:  selector,
 				Name:      name,
 				Namespace: e.Namespace,
 			},
-			Path: o.From.Paths,
+			Path: o.ObjRef.Paths,
 		}, e.EdgeList)
 		if err != nil {
 			e.err = err
@@ -195,20 +194,20 @@ func (e *ActionRunner) Apply() *ActionRunner {
 			//kv.Type
 			//kv.Format
 			//kv.Key
-			//kv.Path
-			//kv.PathTemplate
-			if kv.PathTemplate != "" {
-				tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.PathTemplate)
+			//kv.FieldPath
+			//kv.FieldPathTemplate
+			if kv.FieldRef.FieldPathTemplate != "" {
+				tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.FieldRef.FieldPathTemplate)
 				if err != nil {
-					e.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.PathTemplate, err)
+					e.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err)
 					return e
 				}
 				err = tpl.Execute(&buf, obj.UnstructuredContent())
 				if err != nil {
-					e.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.PathTemplate, err)
+					e.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err)
 					return e
 				}
-				switch kv.Type {
+				switch kv.FieldRef.Type {
 				case "string":
 					opts.StringValues = append(opts.StringValues, fmt.Sprintf("%s=%v", kv.Key, buf.String()))
 				case "nil", "null":
@@ -218,8 +217,8 @@ func (e *ActionRunner) Apply() *ActionRunner {
 					opts.Values = append(opts.Values, fmt.Sprintf("%s=%v", kv.Key, buf.String()))
 				}
 				buf.Reset()
-			} else if kv.Path != "" {
-				path := strings.Trim(kv.Path, ".")
+			} else if kv.FieldRef.FieldPath != "" {
+				path := strings.Trim(kv.FieldRef.FieldPath, ".")
 				v, ok, err := unstructured.NestedFieldNoCopy(obj.UnstructuredContent(), strings.Split(path, ".")...)
 				if err != nil {
 					e.err = err
@@ -250,9 +249,9 @@ func (e *ActionRunner) Apply() *ActionRunner {
 		return e
 	}
 	deployer.WithRegistry(lib.DefaultRegistry).WithOptions(action.DeployOptions{
-		ChartURL:  e.action.ChartRepoRef.URL,
-		ChartName: e.action.ChartRepoRef.Name,
-		Version:   e.action.ChartRepoRef.Version,
+		ChartURL:  e.action.ChartRef.URL,
+		ChartName: e.action.ChartRef.Name,
+		Version:   e.action.ChartRef.Version,
 		Values: values.Options{
 			ReplaceValues: vals,
 		},
@@ -263,7 +262,7 @@ func (e *ActionRunner) Apply() *ActionRunner {
 		Devel:                    false,
 		Timeout:                  15 * time.Minute,
 		Namespace:                e.Namespace,
-		ReleaseName:              e.action.ReleaseName,
+		ReleaseName:              e.action.Name,
 		Description:              "Deploy Module",
 		Atomic:                   false,
 		SkipCRDs:                 true,
@@ -322,7 +321,7 @@ func (e *ActionRunner) WaitUntilReady() {
 
 	var buf bytes.Buffer
 	printer := lib.WaitForPrinter{
-		Name:      e.action.ReleaseName,
+		Name:      e.action.Name,
 		Namespace: e.Namespace,
 		WaitFors:  waitflags,
 		W:         &buf,

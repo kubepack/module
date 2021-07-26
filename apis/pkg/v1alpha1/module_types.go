@@ -10,14 +10,18 @@ import (
 // ModuleSpec defines the desired state of Module
 type ModuleSpec struct {
 	Actions  []Action          `json:"actions"`
-	EdgeList []rsapi.NamedEdge `json:"edge_list"`
+	EdgeList []rsapi.NamedEdge `json:"edgeList,omitempty"`
 }
 
 // Check array, map, etc
 // can this be always string like in --set keys?
 // Keep is such that we can always generate helm equivalent command
 type KV struct {
-	Key string `json:"key"`
+	Key      string   `json:"key"`
+	FieldRef FieldRef `json:"fieldref"`
+}
+
+type FieldRef struct {
 	// string, nil, null
 	Type string `json:"type"`
 	// format is an optional OpenAPI type definition for this column. The 'name' format is applied
@@ -26,17 +30,17 @@ type KV struct {
 	// +optional
 	// Format string `json:"format,omitempty"`
 
-	// PathTemplate is a Go text template that will be evaluated to determine cell value.
+	// FieldPathTemplate is a Go text template that will be evaluated to determine cell value.
 	// Users can use JSONPath expression to extract nested fields and apply template functions from Masterminds/sprig library.
 	// The template function for JSON path is called `jp`.
 	// Example: {{ jp "{.a.b}" . }} or {{ jp "{.a.b}" true }}, if json output is desired from JSONPath parser
 	// +optional
-	PathTemplate string `json:"pathTemplate,omitempty"`
+	FieldPathTemplate string `json:"fieldPathTemplate,omitempty"`
 	//
 	//
 	// Directly use path from object
 	// +optional
-	Path string `json:"path,omitempty"`
+	FieldPath string `json:"fieldPath,omitempty"`
 
 	// json patch operation
 	// See also: http://jsonpatch.com/
@@ -44,15 +48,13 @@ type KV struct {
 }
 
 type LoadValue struct {
-	From   ObjectLocator `json:"from"`
+	ObjRef ObjectLocator `json:"objref"`
 	Values []KV          `json:"values"`
 }
 
 type ObjectLocator struct {
-	// Use the values from that release == action to render templates
-	UseRelease string    `json:"use_release"`
-	Src        ObjectRef `json:"src"`
-	Paths      []string  `json:"paths"` // sequence of DirectedEdge names
+	Src   ObjectRef `json:"src"`
+	Paths []string  `json:"paths,omitempty"` // sequence of DirectedEdge names
 }
 
 type ObjectRef struct {
@@ -60,30 +62,31 @@ type ObjectRef struct {
 	Selector     *metav1.LabelSelector `json:"selector,omitempty"`
 	Name         string                `json:"name,omitempty"`
 	NameTemplate string                `json:"nameTemplate,omitempty"`
+	UseAction    string                `json:"useAction"` // Use the values from that release == action to render templates
 }
 
 type Action struct {
-	// Also the action name
-	ReleaseName string `json:"releaseName" protobuf:"bytes,3,opt,name=releaseName"`
+	// Also the release name
+	Name string `json:"name"`
 
-	rsapi.ChartRepoRef `json:",inline" protobuf:"bytes,1,opt,name=chartRef"`
+	ChartRef rsapi.ChartRepoRef `json:"chartRef,omitempty"`
 
-	ValuesFile string `json:"valuesFile,omitempty" protobuf:"bytes,6,opt,name=valuesFile"`
+	ValuesFile string `json:"valuesFile,omitempty"`
 	// RFC 6902 compatible json patch. ref: http://jsonpatch.com
 	// +optional
 	// +kubebuilder:pruning:PreserveUnknownFields
-	ValuesPatch *runtime.RawExtension `json:"valuesPatch,omitempty" protobuf:"bytes,7,opt,name=valuesPatch"`
+	ValuesPatch *runtime.RawExtension `json:"valuesPatch,omitempty"`
 
-	ValueOverrides []LoadValue `json:"overrideValues"`
+	ValueOverrides []LoadValue `json:"overrideValues,omitempty"`
 
 	// https://github.com/tamalsaha/kstatus-demo
-	ReadinessCriteria ReadinessCriteria `json:"readiness_criteria"`
+	ReadinessCriteria ReadinessCriteria `json:"readinessCriteria"`
 
-	Prerequisites Prerequisites `json:"prerequisites"`
+	Prerequisites *Prerequisites `json:"prerequisites,omitempty"`
 }
 
 type Prerequisites struct {
-	RequiredResources []metav1.GroupVersionResource `json:"required_resources"`
+	RequiredResources []metav1.GroupVersionResource `json:"requiredResources,omitempty"`
 }
 
 type ReadinessCriteria struct {
@@ -91,25 +94,25 @@ type ReadinessCriteria struct {
 
 	// List objects for which to wait to reconcile using kstatus == Current
 	// Same as helm --wait
-	WaitForReconciled bool `json:"wait_for_reconciled"`
+	WaitForReconciled bool `json:"waitForReconciled"`
 
-	ResourcesExist []metav1.GroupVersionResource `json:"required_resources"`
-	WaitFors       []WaitFlags                   `json:"waitFors,omitempty" protobuf:"bytes,9,rep,name=waitFors"`
+	ResourcesExist []metav1.GroupVersionResource `json:"requiredResources,omitempty"`
+	WaitFors       []WaitFlags                   `json:"waitFors,omitempty"`
 }
 
 type ChartRef struct {
-	URL  string `json:"url" protobuf:"bytes,1,opt,name=url"`
-	Name string `json:"name" protobuf:"bytes,2,opt,name=name"`
+	URL  string `json:"url"`
+	Name string `json:"name"`
 }
 
 // wait ([-f FILENAME] | resource.group/resource.name | resource.group [(-l label | --all)]) [--for=delete|--for condition=available]
 
 type WaitFlags struct {
-	Resource     metav1.GroupResource  `json:"resource" protobuf:"bytes,1,opt,name=resource"`
-	Labels       *metav1.LabelSelector `json:"labels" protobuf:"bytes,2,opt,name=labels"`
-	All          bool                  `json:"all" protobuf:"varint,3,opt,name=all"`
-	Timeout      metav1.Duration       `json:"timeout" protobuf:"bytes,4,opt,name=timeout"`
-	ForCondition string                `json:"for" protobuf:"bytes,5,opt,name=for"`
+	Resource     metav1.GroupResource  `json:"resource"`
+	Labels       *metav1.LabelSelector `json:"labels"`
+	All          bool                  `json:"all"`
+	Timeout      metav1.Duration       `json:"timeout"`
+	ForCondition string                `json:"for"`
 }
 
 // ModuleStatus defines the observed state of Module

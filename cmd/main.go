@@ -215,7 +215,7 @@ func main_install_or_upgrdae() {
 	}
 }
 
-func main() {
+func main_() {
 	print_yaml()
 
 	cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
@@ -326,7 +326,7 @@ func main_set_values() {
 	}
 }
 
-func main_print_yaml() {
+func main() {
 	print_yaml()
 }
 
@@ -353,22 +353,24 @@ func main_test_jp() {
 		panic(err)
 	}
 	kv := pkgapi.KV{
-		Key:          "first.port",
-		Type:         "string",
-		PathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
-		Path:         "",
+		Key: "first.port",
+		FieldRef: pkgapi.FieldRef{
+			Type:              "string",
+			FieldPathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
+			FieldPath:         "",
+		},
 	}
 
-	tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.PathTemplate)
+	tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.FieldRef.FieldPathTemplate)
 	if err != nil {
-		panic(fmt.Errorf("failed to parse path template %s, reason: %v", kv.PathTemplate, err))
+		panic(fmt.Errorf("failed to parse path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err))
 	}
 	var buf bytes.Buffer
 	err = tpl.Execute(&buf, obj.UnstructuredContent())
 	if err != nil {
-		panic(fmt.Errorf("failed to resolve path template %s, reason: %v", kv.PathTemplate, err))
+		panic(fmt.Errorf("failed to resolve path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err))
 	}
-	switch kv.Type {
+	switch kv.FieldRef.Type {
 	case "string":
 		fmt.Printf("%s=%v\n", kv.Key, buf.String())
 	case "nil", "null":

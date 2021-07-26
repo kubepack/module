@@ -6,24 +6,26 @@ metadata:
   namespace: demo
 spec:
   actions:
-  - name: first
-    overrideValues: null
+  - chartRef:
+      name: first
+      url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
+      version: 0.1.0
+    name: first
     prerequisites:
-      required_resources:
+      requiredResources:
       - group: apps
         resource: deployments
         version: v1
-    readiness_criteria:
-      required_resources: null
+    readinessCriteria:
       timeout: 0s
-      wait_for_reconciled: true
-    releaseName: first
-    url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
-    version: 0.1.0
-  - name: third
+      waitForReconciled: true
+  - chartRef:
+      name: third
+      url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
+      version: 0.1.0
+    name: third
     overrideValues:
-    - from:
-        paths: null
+    - objref:
         src:
           selector:
             matchLabels:
@@ -32,27 +34,26 @@ spec:
           target:
             apiVersion: v1
             kind: Pod
-        use_release: first
+          useAction: first
       values:
-      - key: first.name
-        path: .metadata.name
-        type: string
-      - key: first.port
-        pathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}'
-        type: string
+      - fieldref:
+          fieldPath: .metadata.name
+          type: string
+        key: first.name
+      - fieldref:
+          fieldPathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}"
+            . }}'
+          type: string
+        key: first.port
     prerequisites:
-      required_resources:
+      requiredResources:
       - group: apps
         resource: deployments
         version: v1
-    readiness_criteria:
-      required_resources: null
+    readinessCriteria:
       timeout: 0s
-      wait_for_reconciled: true
-    releaseName: third
-    url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
-    version: 0.1.0
-  edge_list:
+      waitForReconciled: true
+  edgeList:
   - connection:
       type: ""
     dst: {}

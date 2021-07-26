@@ -18,8 +18,8 @@ var myflow = &pkgapi.Module{
 	Spec: pkgapi.ModuleSpec{
 		Actions: []pkgapi.Action{
 			{
-				ReleaseName: "first",
-				ChartRepoRef: rsapi.ChartRepoRef{
+				Name: "first",
+				ChartRef: rsapi.ChartRepoRef{
 					URL:     "https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/",
 					Name:    "first",
 					Version: "0.1.0",
@@ -27,7 +27,7 @@ var myflow = &pkgapi.Module{
 				ValuesFile:     "",
 				ValuesPatch:    nil,
 				ValueOverrides: nil,
-				Prerequisites: pkgapi.Prerequisites{
+				Prerequisites: &pkgapi.Prerequisites{
 					RequiredResources: []metav1.GroupVersionResource{
 						{Group: "apps", Version: "v1", Resource: "deployments"},
 					},
@@ -52,8 +52,8 @@ var myflow = &pkgapi.Module{
 				},
 			},
 			{
-				ReleaseName: "third",
-				ChartRepoRef: rsapi.ChartRepoRef{
+				Name: "third",
+				ChartRef: rsapi.ChartRepoRef{
 					URL:     "https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/",
 					Name:    "third",
 					Version: "0.1.0",
@@ -68,8 +68,7 @@ var myflow = &pkgapi.Module{
 				*/
 				ValueOverrides: []pkgapi.LoadValue{
 					{
-						From: pkgapi.ObjectLocator{
-							UseRelease: "first",
+						ObjRef: pkgapi.ObjectLocator{
 							Src: pkgapi.ObjectRef{
 								Target: metav1.TypeMeta{
 									Kind:       "Pod",
@@ -83,26 +82,31 @@ var myflow = &pkgapi.Module{
 								},
 								Name:         "",
 								NameTemplate: "",
+								UseAction:    "first",
 							},
 							Paths: nil,
 						},
 						Values: []pkgapi.KV{
 							{
-								Key:          "first.name",
-								Type:         "string",
-								PathTemplate: ``,
-								Path:         ".metadata.name",
+								Key: "first.name",
+								FieldRef: pkgapi.FieldRef{
+									Type:              "string",
+									FieldPathTemplate: ``,
+									FieldPath:         ".metadata.name",
+								},
 							},
 							{
-								Key:          "first.port",
-								Type:         "string",
-								PathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
-								Path:         "",
+								Key: "first.port",
+								FieldRef: pkgapi.FieldRef{
+									Type:              "string",
+									FieldPathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
+									FieldPath:         "",
+								},
 							},
 						},
 					},
 				},
-				Prerequisites: pkgapi.Prerequisites{
+				Prerequisites: &pkgapi.Prerequisites{
 					RequiredResources: []metav1.GroupVersionResource{
 						{Group: "apps", Version: "v1", Resource: "deployments"},
 					},
