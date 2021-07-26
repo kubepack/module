@@ -36,15 +36,14 @@ spec:
             kind: Pod
           useAction: first
       values:
-      - fieldref:
+      - key: first.name
+        value:
           fieldPath: .metadata.name
           type: string
-        key: first.name
-      - fieldref:
-          fieldPathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}"
-            . }}'
+      - key: first.port
+        value:
+          fieldPathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}'
           type: string
-        key: first.port
     prerequisites:
       requiredResources:
       - group: apps

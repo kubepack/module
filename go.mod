@@ -19,6 +19,8 @@ require (
 	sigs.k8s.io/yaml v1.2.0
 )
 
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.3.0
+
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
 
 replace cloud.google.com/go => cloud.google.com/go v0.54.0

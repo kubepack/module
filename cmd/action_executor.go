@@ -108,86 +108,92 @@ func (e *ActionRunner) Apply() *ActionRunner {
 	}
 
 	for _, o := range e.action.ValueOverrides {
-		selector := o.ObjRef.Src.Selector
-		name := o.ObjRef.Src.Name
+		var selector *metav1.LabelSelector
+		var name string
+		var obj *unstructured.Unstructured
 
-		if o.ObjRef.Src.UseAction != "" && name == "" {
-			state, ok := ModuleStore[o.ObjRef.Src.UseAction]
-			if !ok {
-				e.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
-				return e
-			}
-			// initialize engine if needed
-			err = state.Init()
-			if err != nil {
-				e.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
-				klog.Errorln(err)
-				return e
-			}
+		if o.ObjRef != nil {
+			selector = o.ObjRef.Src.Selector
+			name = o.ObjRef.Src.Name
 
-			tpl := o.ObjRef.Src.NameTemplate
-			if tpl != "" {
-				l := TemplateList{}
-				l.Add(tpl)
-				result, err := state.Engine.Render(l)
-				if err != nil {
-					e.err = err
+			if o.ObjRef.Src.UseAction != "" && name == "" {
+				state, ok := ModuleStore[o.ObjRef.Src.UseAction]
+				if !ok {
+					e.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
 					return e
 				}
-				name = TemplateList(result).Get(tpl)
-			} else if o.ObjRef.Src.Selector != nil {
-				l := TemplateList{}
-				for _, v := range o.ObjRef.Src.Selector.MatchLabels {
-					l.Add(v)
+				// initialize engine if needed
+				err = state.Init()
+				if err != nil {
+					e.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
+					klog.Errorln(err)
+					return e
 				}
-				for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
-					for _, v := range expr.Values {
+
+				tpl := o.ObjRef.Src.NameTemplate
+				if tpl != "" {
+					l := TemplateList{}
+					l.Add(tpl)
+					result, err := state.Engine.Render(l)
+					if err != nil {
+						e.err = err
+						return e
+					}
+					name = TemplateList(result).Get(tpl)
+				} else if o.ObjRef.Src.Selector != nil {
+					l := TemplateList{}
+					for _, v := range o.ObjRef.Src.Selector.MatchLabels {
 						l.Add(v)
 					}
-				}
-
-				l, err = state.Engine.Render(l)
-				if err != nil {
-					e.err = err
-					return e
-				}
-
-				var sel metav1.LabelSelector
-				if o.ObjRef.Src.Selector.MatchLabels != nil {
-					sel.MatchLabels = make(map[string]string)
-				}
-				for k, v := range o.ObjRef.Src.Selector.MatchLabels {
-					sel.MatchLabels[k] = l.Get(v)
-				}
-				if len(o.ObjRef.Src.Selector.MatchExpressions) > 0 {
-					sel.MatchExpressions = make([]metav1.LabelSelectorRequirement, 0, len(o.ObjRef.Src.Selector.MatchExpressions))
-				}
-				for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
-					ne := expr
-					ne.Values = make([]string, 0, len(expr.Values))
-					for _, v := range expr.Values {
-						ne.Values = append(ne.Values, l.Get(v))
+					for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
+						for _, v := range expr.Values {
+							l.Add(v)
+						}
 					}
-					sel.MatchExpressions = append(sel.MatchExpressions, ne)
-				}
-				selector = &sel
-			}
-		}
 
-		obj, err := finder.Locate(&rsapi.ObjectLocator{
-			Src: rsapi.ObjectRef{
-				Target:    o.ObjRef.Src.Target,
-				Selector:  selector,
-				Name:      name,
-				Namespace: e.Namespace,
-			},
-			Path: o.ObjRef.Paths,
-		}, e.EdgeList)
-		if err != nil {
-			e.err = err
-			return e
+					l, err = state.Engine.Render(l)
+					if err != nil {
+						e.err = err
+						return e
+					}
+
+					var sel metav1.LabelSelector
+					if o.ObjRef.Src.Selector.MatchLabels != nil {
+						sel.MatchLabels = make(map[string]string)
+					}
+					for k, v := range o.ObjRef.Src.Selector.MatchLabels {
+						sel.MatchLabels[k] = l.Get(v)
+					}
+					if len(o.ObjRef.Src.Selector.MatchExpressions) > 0 {
+						sel.MatchExpressions = make([]metav1.LabelSelectorRequirement, 0, len(o.ObjRef.Src.Selector.MatchExpressions))
+					}
+					for _, expr := range o.ObjRef.Src.Selector.MatchExpressions {
+						ne := expr
+						ne.Values = make([]string, 0, len(expr.Values))
+						for _, v := range expr.Values {
+							ne.Values = append(ne.Values, l.Get(v))
+						}
+						sel.MatchExpressions = append(sel.MatchExpressions, ne)
+					}
+					selector = &sel
+				}
+			}
+
+			obj, err = finder.Locate(&rsapi.ObjectLocator{
+				Src: rsapi.ObjectRef{
+					Target:    o.ObjRef.Src.Target,
+					Selector:  selector,
+					Name:      name,
+					Namespace: e.Namespace,
+				},
+				Path: o.ObjRef.Paths,
+			}, e.EdgeList)
+			if err != nil {
+				e.err = err
+				return e
+			}
+			fmt.Println(obj.GetName())
 		}
-		fmt.Println(obj.GetName())
 
 		var buf bytes.Buffer
 		for _, kv := range o.Values {
@@ -196,18 +202,34 @@ func (e *ActionRunner) Apply() *ActionRunner {
 			//kv.Key
 			//kv.FieldPath
 			//kv.FieldPathTemplate
-			if kv.FieldRef.FieldPathTemplate != "" {
-				tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.FieldRef.FieldPathTemplate)
-				if err != nil {
-					e.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err)
+			if kv.ValueRef.Raw != "" {
+				switch kv.ValueRef.Type {
+				case "string":
+					opts.StringValues = append(opts.StringValues, fmt.Sprintf("%s=%v", kv.Key, kv.ValueRef.Raw))
+				case "nil", "null":
+					// See https://helm.sh/docs/chart_template_guide/values_files/#deleting-a-default-key
+					opts.Values = append(opts.Values, fmt.Sprintf("%s=null", kv.Key))
+				default:
+					opts.Values = append(opts.Values, fmt.Sprintf("%s=%v", kv.Key, kv.ValueRef.Raw))
+				}
+			} else if kv.ValueRef.FieldPathTemplate != "" {
+				if obj == nil {
+					e.err = fmt.Errorf("failed to locate object for action %s", e.action.Name)
 					return e
 				}
+
+				tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.ValueRef.FieldPathTemplate)
+				if err != nil {
+					e.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
+					return e
+				}
+				buf.Reset()
 				err = tpl.Execute(&buf, obj.UnstructuredContent())
 				if err != nil {
-					e.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err)
+					e.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
 					return e
 				}
-				switch kv.FieldRef.Type {
+				switch kv.ValueRef.Type {
 				case "string":
 					opts.StringValues = append(opts.StringValues, fmt.Sprintf("%s=%v", kv.Key, buf.String()))
 				case "nil", "null":
@@ -216,9 +238,13 @@ func (e *ActionRunner) Apply() *ActionRunner {
 				default:
 					opts.Values = append(opts.Values, fmt.Sprintf("%s=%v", kv.Key, buf.String()))
 				}
-				buf.Reset()
-			} else if kv.FieldRef.FieldPath != "" {
-				path := strings.Trim(kv.FieldRef.FieldPath, ".")
+			} else if kv.ValueRef.FieldPath != "" {
+				if obj == nil {
+					e.err = fmt.Errorf("failed to locate object for action %s", e.action.Name)
+					return e
+				}
+
+				path := strings.Trim(kv.ValueRef.FieldPath, ".")
 				v, ok, err := unstructured.NestedFieldNoCopy(obj.UnstructuredContent(), strings.Split(path, ".")...)
 				if err != nil {
 					e.err = err

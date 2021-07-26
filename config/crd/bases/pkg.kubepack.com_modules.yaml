@@ -163,7 +163,9 @@ spec:
                                 string like in --set keys? Keep is such that we can
                                 always generate helm equivalent command
                               properties:
-                                fieldref:
+                                key:
+                                  type: string
+                                value:
                                   properties:
                                     fieldPath:
                                       description: Directly use path from object
@@ -179,21 +181,20 @@ spec:
                                         "{.a.b}" true }}, if json output is desired
                                         from JSONPath parser'
                                       type: string
+                                    raw:
+                                      type: string
                                     type:
                                       description: string, nil, null
                                       type: string
                                   required:
                                   - type
                                   type: object
-                                key:
-                                  type: string
                               required:
-                              - fieldref
                               - key
+                              - value
                               type: object
                             type: array
                         required:
-                        - objref
                         - values
                         type: object
                       type: array

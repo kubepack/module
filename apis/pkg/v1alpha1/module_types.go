@@ -16,12 +16,13 @@ type ModuleSpec struct {
 // Check array, map, etc
 // can this be always string like in --set keys?
 // Keep is such that we can always generate helm equivalent command
+// https://helm.sh/docs/intro/using_helm/#the-format-and-limitations-of---set
 type KV struct {
 	Key      string   `json:"key"`
-	FieldRef FieldRef `json:"fieldref"`
+	ValueRef ValueRef `json:"value"`
 }
 
-type FieldRef struct {
+type ValueRef struct {
 	// string, nil, null
 	Type string `json:"type"`
 	// format is an optional OpenAPI type definition for this column. The 'name' format is applied
@@ -29,6 +30,8 @@ type FieldRef struct {
 	// See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types for more.
 	// +optional
 	// Format string `json:"format,omitempty"`
+
+	Raw string `json:"raw,omitempty"`
 
 	// FieldPathTemplate is a Go text template that will be evaluated to determine cell value.
 	// Users can use JSONPath expression to extract nested fields and apply template functions from Masterminds/sprig library.
@@ -48,8 +51,8 @@ type FieldRef struct {
 }
 
 type LoadValue struct {
-	ObjRef ObjectLocator `json:"objref"`
-	Values []KV          `json:"values"`
+	ObjRef *ObjectLocator `json:"objref,omitempty"`
+	Values []KV           `json:"values"`
 }
 
 type ObjectLocator struct {

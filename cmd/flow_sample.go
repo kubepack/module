@@ -68,7 +68,7 @@ var myflow = &pkgapi.Module{
 				*/
 				ValueOverrides: []pkgapi.LoadValue{
 					{
-						ObjRef: pkgapi.ObjectLocator{
+						ObjRef: &pkgapi.ObjectLocator{
 							Src: pkgapi.ObjectRef{
 								Target: metav1.TypeMeta{
 									Kind:       "Pod",
@@ -89,7 +89,7 @@ var myflow = &pkgapi.Module{
 						Values: []pkgapi.KV{
 							{
 								Key: "first.name",
-								FieldRef: pkgapi.FieldRef{
+								ValueRef: pkgapi.ValueRef{
 									Type:              "string",
 									FieldPathTemplate: ``,
 									FieldPath:         ".metadata.name",
@@ -97,7 +97,7 @@ var myflow = &pkgapi.Module{
 							},
 							{
 								Key: "first.port",
-								FieldRef: pkgapi.FieldRef{
+								ValueRef: pkgapi.ValueRef{
 									Type:              "string",
 									FieldPathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
 									FieldPath:         "",

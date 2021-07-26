@@ -354,23 +354,23 @@ func main_test_jp() {
 	}
 	kv := pkgapi.KV{
 		Key: "first.port",
-		FieldRef: pkgapi.FieldRef{
+		ValueRef: pkgapi.ValueRef{
 			Type:              "string",
 			FieldPathTemplate: `{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}`,
 			FieldPath:         "",
 		},
 	}
 
-	tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.FieldRef.FieldPathTemplate)
+	tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.ValueRef.FieldPathTemplate)
 	if err != nil {
-		panic(fmt.Errorf("failed to parse path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err))
+		panic(fmt.Errorf("failed to parse path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err))
 	}
 	var buf bytes.Buffer
 	err = tpl.Execute(&buf, obj.UnstructuredContent())
 	if err != nil {
-		panic(fmt.Errorf("failed to resolve path template %s, reason: %v", kv.FieldRef.FieldPathTemplate, err))
+		panic(fmt.Errorf("failed to resolve path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err))
 	}
-	switch kv.FieldRef.Type {
+	switch kv.ValueRef.Type {
 	case "string":
 		fmt.Printf("%s=%v\n", kv.Key, buf.String())
 	case "nil", "null":
