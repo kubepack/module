@@ -18,7 +18,7 @@ spec:
       timeout: 0s
       wait_for_reconciled: true
     releaseName: first
-    url: https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/
+    url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
     version: 0.1.0
   - name: third
     overrideValues:
@@ -50,7 +50,7 @@ spec:
       timeout: 0s
       wait_for_reconciled: true
     releaseName: third
-    url: https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/
+    url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
     version: 0.1.0
   edge_list:
   - connection:

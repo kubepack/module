@@ -20,7 +20,7 @@ var myflow = &pkgapi.Module{
 			{
 				ReleaseName: "first",
 				ChartRepoRef: rsapi.ChartRepoRef{
-					URL:     "https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/",
+					URL:     "https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/",
 					Name:    "first",
 					Version: "0.1.0",
 				},
@@ -54,7 +54,7 @@ var myflow = &pkgapi.Module{
 			{
 				ReleaseName: "third",
 				ChartRepoRef: rsapi.ChartRepoRef{
-					URL:     "https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/",
+					URL:     "https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/",
 					Name:    "third",
 					Version: "0.1.0",
 				},

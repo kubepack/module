@@ -1,7 +1,7 @@
 # hell-flow
 
 ```
-helm repo add hellflow https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/
+helm repo add module-testdata https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
 helm repo update
 ```
 

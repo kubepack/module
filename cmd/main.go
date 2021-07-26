@@ -104,7 +104,7 @@ var (
 	//name    = "kubedb"
 	//version = "v0.13.0-rc.0"
 
-	url     = "https://raw.githubusercontent.com/tamalsaha/hell-flow/master/stable/"
+	url     = "https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/"
 	name    = "first"
 	version = "0.1.0"
 )
