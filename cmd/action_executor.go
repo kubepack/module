@@ -42,16 +42,16 @@ type ActionRunner struct {
 	err        error
 }
 
-func (runner *ActionRunner) Execute() error {
-	if runner.MeetsPrerequisites() {
-		runner.Apply().WaitUntilReady()
-		if runner.Err() != nil {
-			// if ae, ok := runner.Err().(AlreadyErrored); ok {
+func (a *ActionRunner) Execute() error {
+	if a.MeetsPrerequisites() {
+		a.Apply().WaitUntilReady()
+		if a.Err() != nil {
+			// if ae, ok := a.Err().(AlreadyErrored); ok {
 			// action was already errored out, Rest before reusing
 		}
 	} else {
-		if runner.Err() != nil {
-			// if ae, ok := runner.Err().(AlreadyErrored); ok {
+		if a.Err() != nil {
+			// if ae, ok := a.Err().(AlreadyErrored); ok {
 			// action was already errored out, Rest before reusing
 		}
 	}
@@ -59,55 +59,55 @@ func (runner *ActionRunner) Execute() error {
 }
 
 // Do we need this?
-func (e *ActionRunner) ResetError() {
-	e.err = nil
+func (a *ActionRunner) ResetError() {
+	a.err = nil
 }
 
-func (e *ActionRunner) Err() error {
-	return e.err
+func (a *ActionRunner) Err() error {
+	return a.err
 }
 
-func (e *ActionRunner) MeetsPrerequisites() bool {
-	if e.err != nil {
-		e.err = NewAlreadyErrored(e.err)
+func (a *ActionRunner) MeetsPrerequisites() bool {
+	if a.err != nil {
+		a.err = NewAlreadyErrored(a.err)
 		return false
 	}
 
-	if e.ModuleName == "" {
-		e.err = fmt.Errorf("flow name is required")
+	if a.ModuleName == "" {
+		a.err = fmt.Errorf("flow name is required")
 		return false
 	}
 
-	return e.resourceExists(context.TODO(), e.action.Prerequisites.RequiredResources)
+	return a.resourceExists(context.TODO(), a.action.Prerequisites.RequiredResources)
 }
 
-func (e *ActionRunner) Apply() *ActionRunner {
-	if e.err != nil {
-		e.err = NewAlreadyErrored(e.err)
-		return e
+func (a *ActionRunner) Apply() *ActionRunner {
+	if a.err != nil {
+		a.err = NewAlreadyErrored(a.err)
+		return a
 	}
 
-	chrt, err := lib.DefaultRegistry.GetChart(e.action.ChartRef.URL, e.action.Name, e.action.ChartRef.Version)
+	chrt, err := lib.DefaultRegistry.GetChart(a.action.ChartRef.URL, a.action.Name, a.action.ChartRef.Version)
 	if err != nil {
-		e.err = err
-		return e
+		a.err = err
+		return a
 	}
 
 	opts := values.Options{
 		// ReplaceValues: nil,
-		ValuesFile:   e.action.ValuesFile,
-		ValuesPatch:  e.action.ValuesPatch,
+		ValuesFile:   a.action.ValuesFile,
+		ValuesPatch:  a.action.ValuesPatch,
 		StringValues: nil,
 		Values:       nil,
 		KVPairs:      nil,
 	}
 
 	finder := graph.ObjectFinder{
-		Factory: dynamicfactory.New(e.dc),
-		Mapper:  e.mapper,
+		Factory: dynamicfactory.New(a.dc),
+		Mapper:  a.mapper,
 	}
 
-	for _, o := range e.action.ValueOverrides {
+	for _, o := range a.action.ValueOverrides {
 		var selector *metav1.LabelSelector
 		var name string
 		var obj *unstructured.Unstructured
@@ -119,15 +119,15 @@ func (e *ActionRunner) Apply() *ActionRunner {
 			if o.ObjRef.Src.UseAction != "" && name == "" {
 				state, ok := ModuleStore[o.ObjRef.Src.UseAction]
 				if !ok {
-					e.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
-					return e
+					a.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
+					return a
 				}
 				// initialize engine if needed
 				err = state.Init()
 				if err != nil {
-					e.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
+					a.err = fmt.Errorf("failed to initialize engine, reason; %v", err)
 					klog.Errorln(err)
-					return e
+					return a
 				}
 
 				tpl := o.ObjRef.Src.NameTemplate
@@ -136,8 +136,8 @@ func (e *ActionRunner) Apply() *ActionRunner {
 					l.Add(tpl)
 					result, err := state.Engine.Render(l)
 					if err != nil {
-						e.err = err
-						return e
+						a.err = err
+						return a
 					}
 					name = TemplateList(result).Get(tpl)
 				} else if o.ObjRef.Src.Selector != nil {
@@ -153,8 +153,8 @@ func (e *ActionRunner) Apply() *ActionRunner {
 
 					l, err = state.Engine.Render(l)
 					if err != nil {
-						e.err = err
-						return e
+						a.err = err
+						return a
 					}
 
 					var sel metav1.LabelSelector
@@ -184,13 +184,13 @@ func (e *ActionRunner) Apply() *ActionRunner {
 					Target:    o.ObjRef.Src.Target,
 					Selector:  selector,
 					Name:      name,
-					Namespace: e.Namespace,
+					Namespace: a.Namespace,
 				},
 				Path: o.ObjRef.Paths,
-			}, e.EdgeList)
+			}, a.EdgeList)
 			if err != nil {
-				e.err = err
-				return e
+				a.err = err
+				return a
 			}
 			fmt.Println(obj.GetName())
 		}
@@ -214,20 +214,20 @@ func (e *ActionRunner) Apply() *ActionRunner {
 				}
 			} else if kv.ValueRef.FieldPathTemplate != "" {
 				if obj == nil {
-					e.err = fmt.Errorf("failed to locate object for action %s", e.action.Name)
-					return e
+					a.err = fmt.Errorf("failed to locate object for action %s", a.action.Name)
+					return a
 				}
 
 				tpl, err := template.New("").Funcs(tableconvertor.TxtFuncMap()).Parse(kv.ValueRef.FieldPathTemplate)
 				if err != nil {
-					e.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
-					return e
+					a.err = fmt.Errorf("failed to parse path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
+					return a
 				}
 				buf.Reset()
 				err = tpl.Execute(&buf, obj.UnstructuredContent())
 				if err != nil {
-					e.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
-					return e
+					a.err = fmt.Errorf("failed to resolve path template %s, reason: %v", kv.ValueRef.FieldPathTemplate, err)
+					return a
 				}
 				switch kv.ValueRef.Type {
 				case "string":
@@ -240,15 +240,15 @@ func (e *ActionRunner) Apply() *ActionRunner {
 				}
 			} else if kv.ValueRef.FieldPath != "" {
 				if obj == nil {
-					e.err = fmt.Errorf("failed to locate object for action %s", e.action.Name)
-					return e
+					a.err = fmt.Errorf("failed to locate object for action %s", a.action.Name)
+					return a
 				}
 
 				path := strings.Trim(kv.ValueRef.FieldPath, ".")
 				v, ok, err := unstructured.NestedFieldNoCopy(obj.UnstructuredContent(), strings.Split(path, ".")...)
 				if err != nil {
-					e.err = err
-					return e
+					a.err = err
+					return a
 				}
 				if !ok {
 					// this is the standard behavior Helm template follows
@@ -265,19 +265,19 @@ func (e *ActionRunner) Apply() *ActionRunner {
 	// Now pass this as replace values
 	vals, err := opts.MergeValues(chrt.Chart)
 	if err != nil {
-		e.err = err
-		return e
+		a.err = err
+		return a
 	}
 
-	deployer, err := action.NewDeployer(e.ClientGetter, e.Namespace, "storage.x-helm.dev/apps")
+	deployer, err := action.NewDeployer(a.ClientGetter, a.Namespace, "storage.x-helm.dev/apps")
 	if err != nil {
-		e.err = err
-		return e
+		a.err = err
+		return a
 	}
 	deployer.WithRegistry(lib.DefaultRegistry).WithOptions(action.DeployOptions{
-		ChartURL:  e.action.ChartRef.URL,
-		ChartName: e.action.ChartRef.Name,
-		Version:   e.action.ChartRef.Version,
+		ChartURL:  a.action.ChartRef.URL,
+		ChartName: a.action.ChartRef.Name,
+		Version:   a.action.ChartRef.Version,
 		Values: values.Options{
 			ReplaceValues: vals,
 		},
@@ -287,15 +287,15 @@ func (e *ActionRunner) Apply() *ActionRunner {
 		Wait:                     true,
 		Devel:                    false,
 		Timeout:                  15 * time.Minute,
-		Namespace:                e.Namespace,
-		ReleaseName:              e.action.Name,
+		Namespace:                a.Namespace,
+		ReleaseName:              a.action.Name,
 		Description:              "Deploy Module",
 		Atomic:                   false,
 		SkipCRDs:                 true,
 		SubNotes:                 false,
 		DisableOpenAPIValidation: false,
 		IncludeCRDs:              false,
-		PartOf:                   e.ModuleName,
+		PartOf:                   a.ModuleName,
 		CreateNamespace:          true,
 		Force:                    false,
 		Recreate:                 false,
@@ -303,30 +303,30 @@ func (e *ActionRunner) Apply() *ActionRunner {
 	})
 	_, s2, err := deployer.Run()
 	if err != nil {
-		e.err = err
+		a.err = err
 	}
 	ModuleStore[s2.ReleaseName] = s2
 
-	return e
+	return a
 }
 
-func (e *ActionRunner) WaitUntilReady() {
-	if e.err != nil {
-		e.err = NewAlreadyErrored(e.err)
+func (a *ActionRunner) WaitUntilReady() {
+	if a.err != nil {
+		a.err = NewAlreadyErrored(a.err)
 		return
 	}
 
-	if e.action.ReadinessCriteria.Timeout.Duration == 0 {
-		e.action.ReadinessCriteria.Timeout = metav1.Duration{Duration: 15 * time.Minute}
+	if a.action.ReadinessCriteria.Timeout.Duration == 0 {
+		a.action.ReadinessCriteria.Timeout = metav1.Duration{Duration: 15 * time.Minute}
 	}
 	// start := time.Now()
 	// calculate timeout
 
-	ctx, cancel := context.WithTimeout(context.TODO(), e.action.ReadinessCriteria.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(context.TODO(), a.action.ReadinessCriteria.Timeout.Duration)
 	defer cancel()
 
-	rready := e.resourceExists(ctx, e.action.Prerequisites.RequiredResources)
-	if e.err != nil {
+	rready := a.resourceExists(ctx, a.action.Prerequisites.RequiredResources)
+	if a.err != nil {
 		return
 	}
 	if !rready {
@@ -334,8 +334,8 @@ func (e *ActionRunner) WaitUntilReady() {
 	}
 
 	// WaitForFlags
-	waitflags := make([]v1alpha1.WaitFlags, 0, len(e.action.ReadinessCriteria.WaitFors))
-	for _, w := range e.action.ReadinessCriteria.WaitFors {
+	waitflags := make([]v1alpha1.WaitFlags, 0, len(a.action.ReadinessCriteria.WaitFors))
+	for _, w := range a.action.ReadinessCriteria.WaitFors {
 		waitflags = append(waitflags, v1alpha1.WaitFlags{
 			Resource:     w.Resource,
 			Labels:       w.Labels,
@@ -347,14 +347,14 @@ func (e *ActionRunner) WaitUntilReady() {
 
 	var buf bytes.Buffer
 	printer := lib.WaitForPrinter{
-		Name:      e.action.Name,
-		Namespace: e.Namespace,
+		Name:      a.action.Name,
+		Namespace: a.Namespace,
 		WaitFors:  waitflags,
 		W:         &buf,
 	}
 	err := printer.Do()
 	if err != nil {
-		e.err = err
+		a.err = err
 		return
 	}
 	if buf.Len() > 0 {
@@ -365,26 +365,26 @@ func (e *ActionRunner) WaitUntilReady() {
 	}
 
 	checker := lib.WaitForChecker{
-		Namespace:    e.Namespace,
+		Namespace:    a.Namespace,
 		WaitFors:     waitflags,
-		ClientGetter: e.ClientGetter,
+		ClientGetter: a.ClientGetter,
 	}
 	err = checker.Do()
 	if err != nil {
-		e.err = err
+		a.err = err
 		return
 	}
 }
 
-func (e *ActionRunner) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
+func (a *ActionRunner) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
 	for _, r := range resources {
-		exists, err := IsResourceExistsAndReady(ctx, e.dc, e.mapper, schema.GroupVersionResource{
+		exists, err := IsResourceExistsAndReady(ctx, a.dc, a.mapper, schema.GroupVersionResource{
 			Group:    r.Group,
 			Version:  r.Version,
 			Resource: r.Resource,
 		})
 		if err != nil {
-			e.err = err
+			a.err = err
 			return false
 		}
 		if !exists {
@@ -394,9 +394,9 @@ func (e *ActionRunner) resourceExists(ctx context.Context, resources []metav1.Gr
 	return true
 }
 
-func (e *ActionRunner) IsReady() bool {
-	if e.err != nil {
-		e.err = NewAlreadyErrored(e.err)
+func (a *ActionRunner) IsReady() bool {
+	if a.err != nil {
+		a.err = NewAlreadyErrored(a.err)
 		return false
 	}
 
