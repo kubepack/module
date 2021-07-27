@@ -25,8 +25,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"kmodules.xyz/client-go/discovery"
-	pkg "kubepack.dev/module/apis/pkg/v1alpha1"
-	pkg2 "kubepack.dev/module/pkg"
+	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
+	"kubepack.dev/module/pkg"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -58,9 +58,9 @@ type Matcher struct {
 	Selector  *metav1.LabelSelector
 }
 
-//+kubebuilder:rbac:groups=pkg.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkg.kubepack.com,resources=modules/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=pkg.kubepack.com,resources=modules/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -75,7 +75,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log := logf.FromContext(ctx)
 
 	// your logic here
-	var module pkg.Module
+	var module pkgapi.Module
 	if err := r.Get(ctx, req.NamespacedName, &module); err != nil {
 		log.Error(err, "unable to fetch Module")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -87,7 +87,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
 	for _, action := range module.Spec.Actions {
-		runner := pkg2.ActionRunner{
+		runner := pkg.ActionRunner{
 			DC:           r.DC,
 			ClientGetter: r.ClientGetter,
 			Mapper:       r.Mapper,
@@ -106,7 +106,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 	r.ctrl, err = ctrl.NewControllerManagedBy(mgr).
-		For(&pkg.Module{}).
+		For(&pkgapi.Module{}).
 		Build(r)
 	return err
 }

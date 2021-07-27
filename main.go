@@ -39,7 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	pkgv1alpha1 "kubepack.dev/module/apis/pkg/v1alpha1"
+	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 	pkgcontrollers "kubepack.dev/module/controllers/pkg"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -55,7 +55,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(pkgv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(pkgapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
