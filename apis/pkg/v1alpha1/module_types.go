@@ -70,7 +70,8 @@ type ObjectRef struct {
 
 type Action struct {
 	// Also the release name
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
 
 	ChartRef rsapi.ChartRepoRef `json:"chartRef,omitempty"`
 
@@ -86,6 +87,8 @@ type Action struct {
 	ReadinessCriteria ReadinessCriteria `json:"readinessCriteria"`
 
 	Prerequisites *Prerequisites `json:"prerequisites,omitempty"`
+
+	// ReportStatus []ObjectLocator
 }
 
 type Prerequisites struct {

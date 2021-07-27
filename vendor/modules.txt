@@ -246,6 +246,7 @@ github.com/gabriel-vasile/mimetype/internal/magic
 # github.com/go-errors/errors v1.0.1
 github.com/go-errors/errors
 # github.com/go-logr/logr v0.4.0
+## explicit
 github.com/go-logr/logr
 # github.com/go-logr/zapr v0.4.0
 github.com/go-logr/zapr
