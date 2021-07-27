@@ -1,4 +1,4 @@
-package main
+package pkg
 
 import (
 	"bytes"
@@ -31,13 +31,13 @@ import (
 var ModuleStore = map[string]*engine.State{}
 
 type ActionRunner struct {
-	dc           dynamic.Interface
+	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
-	mapper       discovery.ResourceMapper
+	Mapper       discovery.ResourceMapper
 
 	ModuleName string
 	Namespace  string
-	action     pkgapi.Action
+	Action     pkgapi.Action
 	EdgeList   []rsapi.NamedEdge
 	err        error
 }
@@ -47,12 +47,12 @@ func (a *ActionRunner) Execute() error {
 		a.Apply().WaitUntilReady()
 		if a.Err() != nil {
 			// if ae, ok := a.Err().(AlreadyErrored); ok {
-			// action was already errored out, Rest before reusing
+			// Action was already errored out, Rest before reusing
 		}
 	} else {
 		if a.Err() != nil {
 			// if ae, ok := a.Err().(AlreadyErrored); ok {
-			// action was already errored out, Rest before reusing
+			// Action was already errored out, Rest before reusing
 		}
 	}
 	return nil
@@ -78,7 +78,7 @@ func (a *ActionRunner) MeetsPrerequisites() bool {
 		return false
 	}
 
-	return a.resourceExists(context.TODO(), a.action.Prerequisites.RequiredResources)
+	return a.resourceExists(context.TODO(), a.Action.Prerequisites.RequiredResources)
 }
 
 func (a *ActionRunner) Apply() *ActionRunner {
@@ -87,7 +87,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 		return a
 	}
 
-	chrt, err := lib.DefaultRegistry.GetChart(a.action.ChartRef.URL, a.action.Name, a.action.ChartRef.Version)
+	chrt, err := lib.DefaultRegistry.GetChart(a.Action.ChartRef.URL, a.Action.Name, a.Action.ChartRef.Version)
 	if err != nil {
 		a.err = err
 		return a
@@ -95,19 +95,19 @@ func (a *ActionRunner) Apply() *ActionRunner {
 
 	opts := values.Options{
 		// ReplaceValues: nil,
-		ValuesFile:   a.action.ValuesFile,
-		ValuesPatch:  a.action.ValuesPatch,
+		ValuesFile:   a.Action.ValuesFile,
+		ValuesPatch:  a.Action.ValuesPatch,
 		StringValues: nil,
 		Values:       nil,
 		KVPairs:      nil,
 	}
 
 	finder := graph.ObjectFinder{
-		Factory: dynamicfactory.New(a.dc),
-		Mapper:  a.mapper,
+		Factory: dynamicfactory.New(a.DC),
+		Mapper:  a.Mapper,
 	}
 
-	for _, o := range a.action.ValueOverrides {
+	for _, o := range a.Action.ValueOverrides {
 		var selector *metav1.LabelSelector
 		var name string
 		var obj *unstructured.Unstructured
@@ -214,7 +214,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 				}
 			} else if kv.ValueRef.FieldPathTemplate != "" {
 				if obj == nil {
-					a.err = fmt.Errorf("failed to locate object for action %s", a.action.Name)
+					a.err = fmt.Errorf("failed to locate object for Action %s", a.Action.Name)
 					return a
 				}
 
@@ -240,7 +240,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 				}
 			} else if kv.ValueRef.FieldPath != "" {
 				if obj == nil {
-					a.err = fmt.Errorf("failed to locate object for action %s", a.action.Name)
+					a.err = fmt.Errorf("failed to locate object for Action %s", a.Action.Name)
 					return a
 				}
 
@@ -275,9 +275,9 @@ func (a *ActionRunner) Apply() *ActionRunner {
 		return a
 	}
 	deployer.WithRegistry(lib.DefaultRegistry).WithOptions(action.DeployOptions{
-		ChartURL:  a.action.ChartRef.URL,
-		ChartName: a.action.ChartRef.Name,
-		Version:   a.action.ChartRef.Version,
+		ChartURL:  a.Action.ChartRef.URL,
+		ChartName: a.Action.ChartRef.Name,
+		Version:   a.Action.ChartRef.Version,
 		Values: values.Options{
 			ReplaceValues: vals,
 		},
@@ -288,7 +288,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 		Devel:                    false,
 		Timeout:                  15 * time.Minute,
 		Namespace:                a.Namespace,
-		ReleaseName:              a.action.Name,
+		ReleaseName:              a.Action.Name,
 		Description:              "Deploy Module",
 		Atomic:                   false,
 		SkipCRDs:                 true,
@@ -316,16 +316,16 @@ func (a *ActionRunner) WaitUntilReady() {
 		return
 	}
 
-	if a.action.ReadinessCriteria.Timeout.Duration == 0 {
-		a.action.ReadinessCriteria.Timeout = metav1.Duration{Duration: 15 * time.Minute}
+	if a.Action.ReadinessCriteria.Timeout.Duration == 0 {
+		a.Action.ReadinessCriteria.Timeout = metav1.Duration{Duration: 15 * time.Minute}
 	}
 	// start := time.Now()
 	// calculate timeout
 
-	ctx, cancel := context.WithTimeout(context.TODO(), a.action.ReadinessCriteria.Timeout.Duration)
+	ctx, cancel := context.WithTimeout(context.TODO(), a.Action.ReadinessCriteria.Timeout.Duration)
 	defer cancel()
 
-	rready := a.resourceExists(ctx, a.action.Prerequisites.RequiredResources)
+	rready := a.resourceExists(ctx, a.Action.Prerequisites.RequiredResources)
 	if a.err != nil {
 		return
 	}
@@ -334,8 +334,8 @@ func (a *ActionRunner) WaitUntilReady() {
 	}
 
 	// WaitForFlags
-	waitflags := make([]v1alpha1.WaitFlags, 0, len(a.action.ReadinessCriteria.WaitFors))
-	for _, w := range a.action.ReadinessCriteria.WaitFors {
+	waitflags := make([]v1alpha1.WaitFlags, 0, len(a.Action.ReadinessCriteria.WaitFors))
+	for _, w := range a.Action.ReadinessCriteria.WaitFors {
 		waitflags = append(waitflags, v1alpha1.WaitFlags{
 			Resource:     w.Resource,
 			Labels:       w.Labels,
@@ -347,7 +347,7 @@ func (a *ActionRunner) WaitUntilReady() {
 
 	var buf bytes.Buffer
 	printer := lib.WaitForPrinter{
-		Name:      a.action.Name,
+		Name:      a.Action.Name,
 		Namespace: a.Namespace,
 		WaitFors:  waitflags,
 		W:         &buf,
@@ -378,7 +378,7 @@ func (a *ActionRunner) WaitUntilReady() {
 
 func (a *ActionRunner) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
 	for _, r := range resources {
-		exists, err := IsResourceExistsAndReady(ctx, a.dc, a.mapper, schema.GroupVersionResource{
+		exists, err := IsResourceExistsAndReady(ctx, a.DC, a.Mapper, schema.GroupVersionResource{
 			Group:    r.Group,
 			Version:  r.Version,
 			Resource: r.Resource,

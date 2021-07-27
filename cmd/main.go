@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"kubepack.dev/module/pkg"
 	"log"
 	"path/filepath"
 	"text/template"
@@ -239,13 +240,13 @@ func main_() {
 	}
 
 	for _, action := range myflow.Spec.Actions {
-		runner := ActionRunner{
-			dc:           dc,
+		runner := pkg.ActionRunner{
+			DC:           dc,
 			ClientGetter: getter,
-			mapper:       discovery.NewResourceMapper(mapper),
+			Mapper:       discovery.NewResourceMapper(mapper),
 			ModuleName:   myflow.Name,
 			Namespace:    myflow.Namespace,
-			action:       action,
+			Action:       action,
 		}
 		err := runner.Execute()
 		if err != nil {
@@ -255,7 +256,7 @@ func main_() {
 }
 
 func main_tpllist() {
-	tpls := TemplateList{}
+	tpls := pkg.TemplateList{}
 	tpls.Add("xyz")
 	tpls.Add("abc")
 	fmt.Println(tpls)

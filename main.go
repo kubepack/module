@@ -18,7 +18,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/util/homedir"
+	"k8s.io/klog/v2"
+	"kmodules.xyz/client-go/discovery"
+	clientcmdutil "kmodules.xyz/client-go/tools/clientcmd"
+	"kubepack.dev/module/controllers/pkg"
 	"os"
+	"path/filepath"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -27,12 +39,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	pkgv1alpha1 "kubepack.dev/module/apis/pkg/v1alpha1"
+	pkgcontrollers "kubepack.dev/module/controllers/pkg"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	pkgv1alpha1 "kubepack.dev/module/apis/pkg/v1alpha1"
-	pkgcontrollers "kubepack.dev/module/controllers/pkg"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,9 +60,13 @@ func init() {
 }
 
 func main() {
+	var masterURL string
+	var kubeconfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	flag.StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	flag.StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the masterURL location is set by the masterURL flag).")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -65,7 +80,23 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
+		&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}})
+	kubeconfig, err := cc.RawConfig()
+	if err != nil {
+		klog.Fatal(err)
+	}
+	getter := clientcmdutil.NewClientGetter(&kubeconfig)
+	fmt.Println(getter)
+
+	config, err := cc.ClientConfig() // clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+	if err != nil {
+		setupLog.Error(err, "could not get Kubernetes config")
+		os.Exit(1)
+	}
+
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
@@ -79,8 +110,14 @@ func main() {
 	}
 
 	if err = (&pkgcontrollers.ModuleReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:           mgr.GetClient(),
+		Scheme:           mgr.GetScheme(),
+		DC:               dynamic.NewForConfigOrDie(config),
+		ClientGetter:     getter,
+		Mapper:           discovery.NewResourceMapper(mgr.GetRESTMapper()),
+		Mgr:              mgr,
+		ModuleToMatchers: make(map[types.NamespacedName]map[schema.GroupVersionKind][]pkg.Matcher),
+		KindToModule:     make(map[schema.GroupVersionKind]map[pkg.Matcher][]types.NamespacedName),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Module")
 		os.Exit(1)

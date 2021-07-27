@@ -22,21 +22,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/util/homedir"
-	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
-	clientcmdutil "kmodules.xyz/client-go/tools/clientcmd"
-	"log"
-	"path/filepath"
+	pkg "kubepack.dev/module/apis/pkg/v1alpha1"
+	pkg2 "kubepack.dev/module/pkg"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	pkg "kubepack.dev/module/apis/pkg/v1alpha1"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -44,7 +38,11 @@ type ModuleReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
-	mgr  ctrl.Manager
+	DC           dynamic.Interface
+	ClientGetter genericclioptions.RESTClientGetter
+	Mapper       discovery.ResourceMapper
+
+	Mgr  ctrl.Manager
 	ctrl controller.Controller
 
 	// Module -> Matchers
@@ -89,52 +87,24 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
 	for _, action := range module.Spec.Actions {
-		runner := ActionRunner{
-			dc:           dc,
-			ClientGetter: getter,
-			mapper:       discovery.NewResourceMapper(mapper),
-			ModuleName:   myflow.Name,
-			Namespace:    myflow.Namespace,
-			action:       action,
+		runner := pkg2.ActionRunner{
+			DC:           r.DC,
+			ClientGetter: r.ClientGetter,
+			Mapper:       r.Mapper,
+			ModuleName:   module.Name,
+			Namespace:    module.Namespace,
+			Action:       action,
 		}
 		err := runner.Execute()
 		if err != nil {
-			klog.Fatalln(err)
+			return ctrl.Result{}, err
 		}
 	}
-
 	return ctrl.Result{}, nil
 }
 
-var (
-	masterURL      = ""
-	kubeconfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
-)
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
-	//mgr.
-
-	cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
-		&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}})
-	kubeconfig, err := cc.RawConfig()
-	if err != nil {
-		klog.Fatal(err)
-	}
-	getter := clientcmdutil.NewClientGetter(&kubeconfig)
-
-	config, err := cc.ClientConfig() // clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-	if err != nil {
-		log.Fatalf("Could not get Kubernetes config: %s", err)
-	}
-
-	dc := dynamic.NewForConfigOrDie(config)
-	mapper, err := getter.ToRESTMapper()
-	if err != nil {
-		klog.Fatal(err)
-	}
-
 	r.ctrl, err = ctrl.NewControllerManagedBy(mgr).
 		For(&pkg.Module{}).
 		Build(r)
