@@ -13,7 +13,7 @@ require (
 	kmodules.xyz/client-go v0.0.0-20210719120358-dd0503cf99cf
 	kmodules.xyz/resource-metadata v0.5.8-0.20210722055301-dcc1abc08aa0
 	kubepack.dev/kubepack v0.3.4-0.20210722062912-983d069347f7
-	kubepack.dev/lib-helm v0.2.4-0.20210702135227-03dd8e7b6b0f
+	kubepack.dev/lib-helm v0.2.4-0.20210727093153-4730810ea8c8
 	sigs.k8s.io/cli-utils v0.25.0
 	sigs.k8s.io/controller-runtime v0.9.0
 	sigs.k8s.io/yaml v1.2.0

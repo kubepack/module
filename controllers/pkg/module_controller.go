@@ -19,18 +19,21 @@ package pkg
 import (
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"kmodules.xyz/client-go/discovery"
+	"kubepack.dev/lib-helm/pkg/repo"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 	"kubepack.dev/module/pkg"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -41,6 +44,8 @@ type ModuleReconciler struct {
 	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
 	Mapper       discovery.ResourceMapper
+
+	ChartRegistry repo.IRegistry
 
 	Mgr  ctrl.Manager
 	ctrl controller.Controller
@@ -58,6 +63,20 @@ type Matcher struct {
 	Selector  *metav1.LabelSelector
 }
 
+func ( m Matcher) Matches(o client.Object) bool {
+	if m.Namespace != "" && o.GetNamespace() != m.Namespace {
+		return false
+	}
+	if m.Name != "" && o.GetName() != m.Name {
+		return false
+	}
+	selector, err := metav1.LabelSelectorAsSelector(m.Selector) // nil means select nothing
+	if err != nil {
+		return false
+	}
+	return selector.Matches(labels.Set(o.GetLabels()))
+}
+
 //+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/finalizers,verbs=update
@@ -72,7 +91,7 @@ type Matcher struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
+	log := ctrl.LoggerFrom(ctx)
 
 	// your logic here
 	var module pkgapi.Module
@@ -88,12 +107,13 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	for _, action := range module.Spec.Actions {
 		runner := pkg.ActionRunner{
-			DC:           r.DC,
-			ClientGetter: r.ClientGetter,
-			Mapper:       r.Mapper,
-			ModuleName:   module.Name,
-			Namespace:    module.Namespace,
-			Action:       action,
+			DC:            r.DC,
+			ClientGetter:  r.ClientGetter,
+			Mapper:        r.Mapper,
+			ModuleName:    module.Name,
+			Namespace:     module.Namespace,
+			Action:        action,
+			ChartRegistry: r.ChartRegistry,
 		}
 		err := runner.Execute()
 		if err != nil {
@@ -109,4 +129,38 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 		For(&pkgapi.Module{}).
 		Build(r)
 	return err
+}
+
+func (r *ModuleReconciler) ResourceToModules(ctx context.Context) handler.MapFunc {
+	log := ctrl.LoggerFrom(ctx)
+	return func(o client.Object) []ctrl.Request {
+		kinds, unversioned, err := r.Mgr.GetScheme().ObjectKinds(o)
+		if err != nil {
+			log.Error(err, "failed to detect kind")
+			return nil
+		}
+		if unversioned {
+			log.Info("object is unversioned", "type", reflect.TypeOf(o))
+			return nil
+		}
+
+		result := []ctrl.Request{}
+
+		// TODO(tamal): Take lock on KindToModule?
+
+		for _, gvk := range kinds {
+			matchers, ok := r.KindToModule[gvk]
+			if !ok {
+				continue
+			}
+			for matcher, modules := range matchers {
+				if matcher.Matches(o) {
+					for _, module := range modules {
+						result = append(result, ctrl.Request{NamespacedName: module})
+					}
+				}
+			}
+		}
+		return result
+	}
 }

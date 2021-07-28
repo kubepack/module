@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"kubepack.dev/lib-helm/pkg/repo"
 	"strings"
 	"text/template"
 	"time"
@@ -40,6 +41,8 @@ type ActionRunner struct {
 	Action     pkgapi.Action
 	EdgeList   []rsapi.NamedEdge
 	err        error
+
+	ChartRegistry repo.IRegistry
 }
 
 func (a *ActionRunner) Execute() error {
@@ -87,7 +90,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 		return a
 	}
 
-	chrt, err := lib.DefaultRegistry.GetChart(a.Action.ChartRef.URL, a.Action.Name, a.Action.ChartRef.Version)
+	chrt, err := a.ChartRegistry.GetChart(a.Action.ChartRef.URL, a.Action.Name, a.Action.ChartRef.Version)
 	if err != nil {
 		a.err = err
 		return a

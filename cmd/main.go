@@ -241,12 +241,13 @@ func main_() {
 
 	for _, action := range myflow.Spec.Actions {
 		runner := pkg.ActionRunner{
-			DC:           dc,
-			ClientGetter: getter,
-			Mapper:       discovery.NewResourceMapper(mapper),
-			ModuleName:   myflow.Name,
-			Namespace:    myflow.Namespace,
-			Action:       action,
+			DC:            dc,
+			ClientGetter:  getter,
+			Mapper:        discovery.NewResourceMapper(mapper),
+			ModuleName:    myflow.Name,
+			Namespace:     myflow.Namespace,
+			Action:        action,
+			ChartRegistry: lib.DefaultRegistry,
 		}
 		err := runner.Execute()
 		if err != nil {

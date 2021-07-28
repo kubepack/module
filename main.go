@@ -28,6 +28,7 @@ import (
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
 	clientcmdutil "kmodules.xyz/client-go/tools/clientcmd"
+	"kubepack.dev/kubepack/pkg/lib"
 	"kubepack.dev/module/controllers/pkg"
 	"os"
 	"path/filepath"
@@ -115,6 +116,7 @@ func main() {
 		DC:               dynamic.NewForConfigOrDie(config),
 		ClientGetter:     getter,
 		Mapper:           discovery.NewResourceMapper(mgr.GetRESTMapper()),
+		ChartRegistry:    lib.DefaultRegistry,
 		Mgr:              mgr,
 		ModuleToMatchers: make(map[types.NamespacedName]map[schema.GroupVersionKind][]pkg.Matcher),
 		KindToModule:     make(map[schema.GroupVersionKind]map[pkg.Matcher][]types.NamespacedName),
