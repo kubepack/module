@@ -1294,7 +1294,7 @@ kubepack.dev/kubepack/apis/kubepack
 kubepack.dev/kubepack/apis/kubepack/v1alpha1
 kubepack.dev/kubepack/crds
 kubepack.dev/kubepack/pkg/lib
-# kubepack.dev/lib-helm v0.2.4-0.20210727093153-4730810ea8c8
+# kubepack.dev/lib-helm v0.2.4-0.20210728105625-864dd601f24c
 ## explicit
 kubepack.dev/lib-helm/pkg/action
 kubepack.dev/lib-helm/pkg/application
