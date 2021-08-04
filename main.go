@@ -63,11 +63,12 @@ func init() {
 func main() {
 	var masterURL string
 	var kubeconfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	// https://github.com/kubernetes-sigs/controller-runtime/blob/v0.9.0/pkg/client/config/config.go#L39
+	flag.Set("kubeconfig", kubeconfigPath)
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
 	flag.StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	flag.StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the masterURL location is set by the masterURL flag).")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -78,6 +79,15 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	f2 := flag.Lookup("kubeconfig")
+	g, ok := f2.Value.(flag.Getter)
+	if !ok {
+		fmt.Printf("Visit: value does not satisfy Getter: %T", f2.Value)
+		return
+	}
+	kubeconfigPath = g.Get().(string)
+	fmt.Println("kubeconfig = ", kubeconfigPath)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 

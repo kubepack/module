@@ -131,13 +131,13 @@ var myflow = &pkgapi.Module{
 				},
 			},
 		},
-		EdgeList: []rsapi.NamedEdge{
-			{
-				Name:       "",
-				Src:        metav1.TypeMeta{},
-				Dst:        metav1.TypeMeta{},
-				Connection: rsapi.ResourceConnectionSpec{},
-			},
-		},
+		// EdgeList: []rsapi.NamedEdge{
+		// 	{
+		// 		Name:       "",
+		// 		Src:        metav1.TypeMeta{},
+		// 		Dst:        metav1.TypeMeta{},
+		// 		Connection: rsapi.ResourceConnectionSpec{},
+		// 	},
+		// },
 	},
 }

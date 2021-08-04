@@ -63,7 +63,7 @@ type Matcher struct {
 	Selector  *metav1.LabelSelector
 }
 
-func ( m Matcher) Matches(o client.Object) bool {
+func (m Matcher) Matches(o client.Object) bool {
 	if m.Namespace != "" && o.GetNamespace() != m.Namespace {
 		return false
 	}

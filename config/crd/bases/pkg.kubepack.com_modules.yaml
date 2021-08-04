@@ -54,6 +54,8 @@ spec:
                       - url
                       - version
                       type: object
+                    description:
+                      type: string
                     name:
                       description: Also the release name
                       type: string
@@ -161,7 +163,7 @@ spec:
                             items:
                               description: Check array, map, etc can this be always
                                 string like in --set keys? Keep is such that we can
-                                always generate helm equivalent command
+                                always generate helm equivalent command https://helm.sh/docs/intro/using_helm/#the-format-and-limitations-of---set
                               properties:
                                 key:
                                   type: string
