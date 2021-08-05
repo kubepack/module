@@ -18,8 +18,6 @@ package pkg
 
 import (
 	"context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sync"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -50,31 +49,13 @@ type ModuleReconciler struct {
 	Mgr  ctrl.Manager
 	ctrl controller.Controller
 
+	mu sync.Mutex
+
 	// Module -> Matchers
-	ModuleToMatchers map[types.NamespacedName]map[schema.GroupVersionKind][]Matcher
+	ModuleToMatchers map[types.NamespacedName]map[schema.GroupVersionKind][]pkg.Matcher
 
 	// Kind -> Matchers -> []Module
-	KindToModule map[schema.GroupVersionKind]map[Matcher][]types.NamespacedName
-}
-
-type Matcher struct {
-	Name      string
-	Namespace string
-	Selector  *metav1.LabelSelector
-}
-
-func (m Matcher) Matches(o client.Object) bool {
-	if m.Namespace != "" && o.GetNamespace() != m.Namespace {
-		return false
-	}
-	if m.Name != "" && o.GetName() != m.Name {
-		return false
-	}
-	selector, err := metav1.LabelSelectorAsSelector(m.Selector) // nil means select nothing
-	if err != nil {
-		return false
-	}
-	return selector.Matches(labels.Set(o.GetLabels()))
+	KindToModule map[schema.GroupVersionKind]map[pkg.Matcher][]types.NamespacedName
 }
 
 //+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
@@ -113,12 +94,17 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			ModuleName:    module.Name,
 			Namespace:     module.Namespace,
 			Action:        action,
+			EdgeList:      module.Spec.EdgeList,
 			ChartRegistry: r.ChartRegistry,
+			Matchers:      map[schema.GroupVersionKind][]pkg.Matcher{},
 		}
 		err := runner.Execute()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+
+		// runner.Matchers
+
 	}
 	return ctrl.Result{}, nil
 }

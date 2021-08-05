@@ -247,7 +247,9 @@ func main_() {
 			ModuleName:    myflow.Name,
 			Namespace:     myflow.Namespace,
 			Action:        action,
+			EdgeList:      nil,
 			ChartRegistry: lib.DefaultRegistry,
+			Matchers:      map[schema.GroupVersionKind][]pkg.Matcher{},
 		}
 		err := runner.Execute()
 		if err != nil {

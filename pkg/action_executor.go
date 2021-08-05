@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
 	"kubepack.dev/lib-helm/pkg/repo"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"text/template"
 	"time"
@@ -31,6 +33,26 @@ import (
 
 var ModuleStore = map[string]*engine.State{}
 
+type Matcher struct {
+	Name      string
+	Namespace string
+	Selector  *metav1.LabelSelector
+}
+
+func (m Matcher) Matches(o client.Object) bool {
+	if m.Namespace != "" && o.GetNamespace() != m.Namespace {
+		return false
+	}
+	if m.Name != "" && o.GetName() != m.Name {
+		return false
+	}
+	selector, err := metav1.LabelSelectorAsSelector(m.Selector) // nil means select nothing
+	if err != nil {
+		return false
+	}
+	return selector.Matches(labels.Set(o.GetLabels()))
+}
+
 type ActionRunner struct {
 	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
@@ -43,6 +65,8 @@ type ActionRunner struct {
 	err        error
 
 	ChartRegistry repo.IRegistry
+
+	Matchers map[schema.GroupVersionKind][]Matcher
 }
 
 func (a *ActionRunner) Execute() error {
@@ -182,6 +206,15 @@ func (a *ActionRunner) Apply() *ActionRunner {
 				}
 			}
 
+			gvk := schema.FromAPIVersionAndKind(o.ObjRef.Src.Target.APIVersion, o.ObjRef.Src.Target.Kind)
+			a.Matchers[gvk] = []Matcher{
+				{
+					Name:      name,
+					Namespace: a.Namespace,
+					Selector:  selector,
+					// owner ?
+				},
+			}
 			obj, err = finder.Locate(&rsapi.ObjectLocator{
 				Src: rsapi.ObjectRef{
 					Target:    o.ObjRef.Src.Target,

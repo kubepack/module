@@ -80,14 +80,15 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	f2 := flag.Lookup("kubeconfig")
-	g, ok := f2.Value.(flag.Getter)
-	if !ok {
-		fmt.Printf("Visit: value does not satisfy Getter: %T", f2.Value)
-		return
+	if f := flag.Lookup("kubeconfig"); f != nil {
+		g, ok := f.Value.(flag.Getter)
+		if !ok {
+			fmt.Printf("kubeconfig flag does not satisfy Getter: %T", f.Value)
+			return
+		}
+		kubeconfigPath = g.Get().(string)
+		fmt.Println("kubeconfig = ", kubeconfigPath)
 	}
-	kubeconfigPath = g.Get().(string)
-	fmt.Println("kubeconfig = ", kubeconfigPath)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
