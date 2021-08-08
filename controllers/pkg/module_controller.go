@@ -90,6 +90,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			EdgeList:      module.Spec.EdgeList,
 			ChartRegistry: r.ChartRegistry,
 			Matchers:      matchers,
+			Log:           log,
 		}
 		err := runner.Execute()
 		if err != nil {

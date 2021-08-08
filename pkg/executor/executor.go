@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/go-logr/logr"
 	"kubepack.dev/lib-helm/pkg/repo"
 	"kubepack.dev/module/pkg/api"
 	"strings"
@@ -46,6 +47,8 @@ type ActionExecutor struct {
 	ChartRegistry repo.IRegistry
 
 	Matchers map[schema.GroupVersionKind][]api.Matcher
+
+	Log logr.Logger
 }
 
 func (a *ActionExecutor) Execute() error {
@@ -284,7 +287,9 @@ func (a *ActionExecutor) Apply() *ActionExecutor {
 		return a
 	}
 
-	deployer, err := action.NewDeployer(a.ClientGetter, a.Namespace, "storage.x-helm.dev/apps")
+	deployer, err := action.NewDeployer(a.ClientGetter, a.Namespace, "storage.x-helm.dev/apps", func(format string, v ...interface{}) {
+		a.Log.Info(fmt.Sprintf(format, v...), "action", a.Action.Name)
+	})
 	if err != nil {
 		a.err = err
 		return a
