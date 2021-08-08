@@ -20,19 +20,17 @@ import (
 	"context"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"kmodules.xyz/client-go/discovery"
 	"kubepack.dev/lib-helm/pkg/repo"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
-	"kubepack.dev/module/pkg"
-	"reflect"
+	"kubepack.dev/module/pkg/api"
+	"kubepack.dev/module/pkg/executor"
+	"kubepack.dev/module/pkg/watchers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sync"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -49,13 +47,7 @@ type ModuleReconciler struct {
 	Mgr  ctrl.Manager
 	ctrl controller.Controller
 
-	mu sync.Mutex
-
-	// Module -> Matchers
-	ModuleToMatchers map[types.NamespacedName]map[schema.GroupVersionKind][]pkg.Matcher
-
-	// Kind -> Matchers -> []Module
-	KindToModule map[schema.GroupVersionKind]map[pkg.Matcher][]types.NamespacedName
+	Watchers *watchers.ModuleWatchers
 }
 
 //+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
@@ -86,9 +78,9 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
-	matchers := map[schema.GroupVersionKind][]pkg.Matcher{}
+	matchers := map[schema.GroupVersionKind][]api.Matcher{}
 	for _, action := range module.Spec.Actions {
-		runner := pkg.ActionRunner{
+		runner := executor.ActionExecutor{
 			DC:            r.DC,
 			ClientGetter:  r.ClientGetter,
 			Mapper:        r.Mapper,
@@ -105,14 +97,11 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	r.mu.Lock()
-	pkg.UpdateMatchers(
-		r.ModuleToMatchers,
-		r.KindToModule,
-		req.NamespacedName,
-		pkg.CompareMatchers(r.ModuleToMatchers[req.NamespacedName], matchers),
-	)
-	r.mu.Unlock()
+	r.Watchers.UpdateMatchers(
+		ctx,
+		r.Mgr,
+		r.ctrl,
+		req.NamespacedName, matchers)
 
 	return ctrl.Result{}, nil
 }
@@ -123,38 +112,4 @@ func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) (err error) {
 		For(&pkgapi.Module{}).
 		Build(r)
 	return err
-}
-
-func (r *ModuleReconciler) ResourceToModules(ctx context.Context) handler.MapFunc {
-	log := ctrl.LoggerFrom(ctx)
-	return func(o client.Object) []ctrl.Request {
-		kinds, unversioned, err := r.Mgr.GetScheme().ObjectKinds(o)
-		if err != nil {
-			log.Error(err, "failed to detect kind")
-			return nil
-		}
-		if unversioned {
-			log.Info("object is unversioned", "type", reflect.TypeOf(o))
-			return nil
-		}
-
-		result := []ctrl.Request{}
-
-		// TODO(tamal): Take lock on KindToModule?
-
-		for _, gvk := range kinds {
-			matchers, ok := r.KindToModule[gvk]
-			if !ok {
-				continue
-			}
-			for matcher, modules := range matchers {
-				if matcher.Matches(o) {
-					for _, module := range modules {
-						result = append(result, ctrl.Request{NamespacedName: module})
-					}
-				}
-			}
-		}
-		return result
-	}
 }

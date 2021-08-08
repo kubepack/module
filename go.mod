@@ -6,7 +6,7 @@ require (
 	github.com/cespare/xxhash v1.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
-	gomodules.xyz/sets v0.1.0
+	gomodules.xyz/sets v0.2.0
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/cli-runtime v0.21.1

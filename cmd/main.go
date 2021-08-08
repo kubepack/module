@@ -5,7 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"kubepack.dev/module/pkg"
+	"kubepack.dev/module/pkg/api"
+	"kubepack.dev/module/pkg/executor"
 	"log"
 	"path/filepath"
 	"text/template"
@@ -240,7 +241,7 @@ func main_() {
 	}
 
 	for _, action := range myflow.Spec.Actions {
-		runner := pkg.ActionRunner{
+		runner := executor.ActionExecutor{
 			DC:            dc,
 			ClientGetter:  getter,
 			Mapper:        discovery.NewResourceMapper(mapper),
@@ -249,7 +250,7 @@ func main_() {
 			Action:        action,
 			EdgeList:      nil,
 			ChartRegistry: lib.DefaultRegistry,
-			Matchers:      map[schema.GroupVersionKind][]pkg.Matcher{},
+			Matchers:      map[schema.GroupVersionKind][]api.Matcher{},
 		}
 		err := runner.Execute()
 		if err != nil {
@@ -259,7 +260,7 @@ func main_() {
 }
 
 func main_tpllist() {
-	tpls := pkg.TemplateList{}
+	tpls := executor.TemplateList{}
 	tpls.Add("xyz")
 	tpls.Add("abc")
 	fmt.Println(tpls)

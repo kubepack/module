@@ -1,13 +1,12 @@
-package pkg
+package executor
 
 import (
 	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
 	"kubepack.dev/lib-helm/pkg/repo"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"kubepack.dev/module/pkg/api"
 	"strings"
 	"text/template"
 	"time"
@@ -33,28 +32,7 @@ import (
 
 var ModuleStore = map[string]*engine.State{}
 
-type Matcher struct {
-	Name      string
-	Namespace string
-	Selector  metav1.LabelSelector
-}
-
-func (m Matcher) Matches(o client.Object) bool {
-	if m.Namespace != "" && o.GetNamespace() != m.Namespace {
-		return false
-	}
-	if m.Name != "" && o.GetName() != m.Name {
-		return false
-	}
-	// by default select is Empty which means match everything
-	selector, err := metav1.LabelSelectorAsSelector(&m.Selector) // nil means select nothing
-	if err != nil {
-		return false
-	}
-	return selector.Matches(labels.Set(o.GetLabels()))
-}
-
-type ActionRunner struct {
+type ActionExecutor struct {
 	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
 	Mapper       discovery.ResourceMapper
@@ -67,10 +45,10 @@ type ActionRunner struct {
 
 	ChartRegistry repo.IRegistry
 
-	Matchers map[schema.GroupVersionKind][]Matcher
+	Matchers map[schema.GroupVersionKind][]api.Matcher
 }
 
-func (a *ActionRunner) Execute() error {
+func (a *ActionExecutor) Execute() error {
 	if a.MeetsPrerequisites() {
 		a.Apply().WaitUntilReady()
 		if a.Err() != nil {
@@ -87,15 +65,15 @@ func (a *ActionRunner) Execute() error {
 }
 
 // Do we need this?
-func (a *ActionRunner) ResetError() {
+func (a *ActionExecutor) ResetError() {
 	a.err = nil
 }
 
-func (a *ActionRunner) Err() error {
+func (a *ActionExecutor) Err() error {
 	return a.err
 }
 
-func (a *ActionRunner) MeetsPrerequisites() bool {
+func (a *ActionExecutor) MeetsPrerequisites() bool {
 	if a.err != nil {
 		a.err = NewAlreadyErrored(a.err)
 		return false
@@ -109,7 +87,7 @@ func (a *ActionRunner) MeetsPrerequisites() bool {
 	return a.resourceExists(context.TODO(), a.Action.Prerequisites.RequiredResources)
 }
 
-func (a *ActionRunner) Apply() *ActionRunner {
+func (a *ActionExecutor) Apply() *ActionExecutor {
 	if a.err != nil {
 		a.err = NewAlreadyErrored(a.err)
 		return a
@@ -209,14 +187,11 @@ func (a *ActionRunner) Apply() *ActionRunner {
 
 			gvk := schema.FromAPIVersionAndKind(o.ObjRef.Src.Target.APIVersion, o.ObjRef.Src.Target.Kind)
 
-			m := Matcher{
+			m := api.Matcher{
 				Name:      name,
 				Namespace: a.Namespace,
-				// Selector:  selector,
+				Selector:  selector,
 				// owner ?
-			}
-			if selector != nil {
-				m.Selector = *selector
 			}
 			a.Matchers[gvk] = append(a.Matchers[gvk], m)
 			obj, err = finder.Locate(&rsapi.ObjectLocator{
@@ -350,7 +325,7 @@ func (a *ActionRunner) Apply() *ActionRunner {
 	return a
 }
 
-func (a *ActionRunner) WaitUntilReady() {
+func (a *ActionExecutor) WaitUntilReady() {
 	if a.err != nil {
 		a.err = NewAlreadyErrored(a.err)
 		return
@@ -416,7 +391,7 @@ func (a *ActionRunner) WaitUntilReady() {
 	}
 }
 
-func (a *ActionRunner) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
+func (a *ActionExecutor) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
 	for _, r := range resources {
 		exists, err := IsResourceExistsAndReady(ctx, a.DC, a.Mapper, schema.GroupVersionResource{
 			Group:    r.Group,
@@ -434,7 +409,7 @@ func (a *ActionRunner) resourceExists(ctx context.Context, resources []metav1.Gr
 	return true
 }
 
-func (a *ActionRunner) IsReady() bool {
+func (a *ActionExecutor) IsReady() bool {
 	if a.err != nil {
 		a.err = NewAlreadyErrored(a.err)
 		return false

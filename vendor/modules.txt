@@ -664,7 +664,7 @@ gomodules.xyz/jsonpath
 gomodules.xyz/jsonpath/third_party/forked/golang/template
 # gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 gomodules.xyz/pointer
-# gomodules.xyz/sets v0.1.0
+# gomodules.xyz/sets v0.2.0
 ## explicit
 gomodules.xyz/sets
 # gomodules.xyz/x v0.0.5

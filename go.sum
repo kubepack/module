@@ -1207,8 +1207,8 @@ gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209/go.mod h1:sPLsC0+yLTRec
 gomodules.xyz/runtime v0.2.0/go.mod h1:/R/Dw906YIUHKJ5cfKUaJgJrojFjpRU+n0s3Wjn1tqs=
 gomodules.xyz/sets v0.0.0-20200930152147-4f4543544799/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
-gomodules.xyz/sets v0.1.0 h1:G/9/DV98gZw4uTLe9gNOnctk57P5kW8bYcBYOaFyAzM=
-gomodules.xyz/sets v0.1.0/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
+gomodules.xyz/sets v0.2.0 h1:T8YPBWDaPGh/+HBjfL2JYdWeNqxNMoMofEdlvhLKE9w=
+gomodules.xyz/sets v0.2.0/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545/go.mod h1:g/epKzZQuCqgvhzhaoG4cSBNGHqnOrhFR4Q7szDJ1JM=
 gomodules.xyz/x v0.0.5 h1:2ysXizs7gC9QpFds6qNGxMuzNwBzhM9VUfGVSv9Vv+E=
 gomodules.xyz/x v0.0.5/go.mod h1:EGy7cB7ifSuOcbNFc0U1zUPTf5yY8RtXVJlAlhGS9OE=

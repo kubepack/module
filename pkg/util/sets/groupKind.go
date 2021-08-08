@@ -22,33 +22,33 @@ import (
 	"reflect"
 	"sort"
 
-	api "kubepack.dev/module/pkg/api"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// sets.Matcher is a set of api.Matchers, implemented via map[api.Matcher]struct{} for minimal memory consumption.
-type Matcher map[api.Matcher]Empty
+// sets.GroupKind is a set of schema.GroupKinds, implemented via map[schema.GroupKind]struct{} for minimal memory consumption.
+type GroupKind map[schema.GroupKind]Empty
 
-// NewMatcher creates a Matcher from a list of values.
-func NewMatcher(items ...api.Matcher) Matcher {
-	ss := make(Matcher, len(items))
+// NewGroupKind creates a GroupKind from a list of values.
+func NewGroupKind(items ...schema.GroupKind) GroupKind {
+	ss := make(GroupKind, len(items))
 	ss.Insert(items...)
 	return ss
 }
 
-// MatcherKeySet creates a Matcher from a keys of a map[api.Matcher](? extends interface{}).
+// GroupKindKeySet creates a GroupKind from a keys of a map[schema.GroupKind](? extends interface{}).
 // If the value passed in is not actually a map, this will panic.
-func MatcherKeySet(theMap interface{}) Matcher {
+func GroupKindKeySet(theMap interface{}) GroupKind {
 	v := reflect.ValueOf(theMap)
-	ret := Matcher{}
+	ret := GroupKind{}
 
 	for _, keyValue := range v.MapKeys() {
-		ret.Insert(keyValue.Interface().(api.Matcher))
+		ret.Insert(keyValue.Interface().(schema.GroupKind))
 	}
 	return ret
 }
 
 // Insert adds items to the set.
-func (s Matcher) Insert(items ...api.Matcher) Matcher {
+func (s GroupKind) Insert(items ...schema.GroupKind) GroupKind {
 	for _, item := range items {
 		s[item] = Empty{}
 	}
@@ -56,7 +56,7 @@ func (s Matcher) Insert(items ...api.Matcher) Matcher {
 }
 
 // Delete removes all items from the set.
-func (s Matcher) Delete(items ...api.Matcher) Matcher {
+func (s GroupKind) Delete(items ...schema.GroupKind) GroupKind {
 	for _, item := range items {
 		delete(s, item)
 	}
@@ -64,13 +64,13 @@ func (s Matcher) Delete(items ...api.Matcher) Matcher {
 }
 
 // Has returns true if and only if item is contained in the set.
-func (s Matcher) Has(item api.Matcher) bool {
+func (s GroupKind) Has(item schema.GroupKind) bool {
 	_, contained := s[item]
 	return contained
 }
 
 // HasAll returns true if and only if all items are contained in the set.
-func (s Matcher) HasAll(items ...api.Matcher) bool {
+func (s GroupKind) HasAll(items ...schema.GroupKind) bool {
 	for _, item := range items {
 		if !s.Has(item) {
 			return false
@@ -80,7 +80,7 @@ func (s Matcher) HasAll(items ...api.Matcher) bool {
 }
 
 // HasAny returns true if any items are contained in the set.
-func (s Matcher) HasAny(items ...api.Matcher) bool {
+func (s GroupKind) HasAny(items ...schema.GroupKind) bool {
 	for _, item := range items {
 		if s.Has(item) {
 			return true
@@ -95,8 +95,8 @@ func (s Matcher) HasAny(items ...api.Matcher) bool {
 // s2 = {a1, a2, a4, a5}
 // s1.Difference(s2) = {a3}
 // s2.Difference(s1) = {a4, a5}
-func (s Matcher) Difference(s2 Matcher) Matcher {
-	result := NewMatcher()
+func (s GroupKind) Difference(s2 GroupKind) GroupKind {
+	result := NewGroupKind()
 	for key := range s {
 		if !s2.Has(key) {
 			result.Insert(key)
@@ -111,8 +111,8 @@ func (s Matcher) Difference(s2 Matcher) Matcher {
 // s2 = {a3, a4}
 // s1.Union(s2) = {a1, a2, a3, a4}
 // s2.Union(s1) = {a1, a2, a3, a4}
-func (s1 Matcher) Union(s2 Matcher) Matcher {
-	result := NewMatcher()
+func (s1 GroupKind) Union(s2 GroupKind) GroupKind {
+	result := NewGroupKind()
 	for key := range s1 {
 		result.Insert(key)
 	}
@@ -127,9 +127,9 @@ func (s1 Matcher) Union(s2 Matcher) Matcher {
 // s1 = {a1, a2}
 // s2 = {a2, a3}
 // s1.Intersection(s2) = {a2}
-func (s1 Matcher) Intersection(s2 Matcher) Matcher {
-	var walk, other Matcher
-	result := NewMatcher()
+func (s1 GroupKind) Intersection(s2 GroupKind) GroupKind {
+	var walk, other GroupKind
+	result := NewGroupKind()
 	if s1.Len() < s2.Len() {
 		walk = s1
 		other = s2
@@ -146,7 +146,7 @@ func (s1 Matcher) Intersection(s2 Matcher) Matcher {
 }
 
 // IsSuperset returns true if and only if s1 is a superset of s2.
-func (s1 Matcher) IsSuperset(s2 Matcher) bool {
+func (s1 GroupKind) IsSuperset(s2 GroupKind) bool {
 	for item := range s2 {
 		if !s1.Has(item) {
 			return false
@@ -158,29 +158,29 @@ func (s1 Matcher) IsSuperset(s2 Matcher) bool {
 // Equal returns true if and only if s1 is equal (as a set) to s2.
 // Two sets are equal if their membership is identical.
 // (In practice, this means same elements, order doesn't matter)
-func (s1 Matcher) Equal(s2 Matcher) bool {
+func (s1 GroupKind) Equal(s2 GroupKind) bool {
 	return len(s1) == len(s2) && s1.IsSuperset(s2)
 }
 
-type sortableSliceOfMatcher []api.Matcher
+type sortableSliceOfGroupKind []schema.GroupKind
 
-func (s sortableSliceOfMatcher) Len() int           { return len(s) }
-func (s sortableSliceOfMatcher) Less(i, j int) bool { return lessMatcher(s[i], s[j]) }
-func (s sortableSliceOfMatcher) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s sortableSliceOfGroupKind) Len() int           { return len(s) }
+func (s sortableSliceOfGroupKind) Less(i, j int) bool { return lessGroupKind(s[i], s[j]) }
+func (s sortableSliceOfGroupKind) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
-// List returns the contents as a sorted api.Matcher slice.
-func (s Matcher) List() []api.Matcher {
-	res := make(sortableSliceOfMatcher, 0, len(s))
+// List returns the contents as a sorted schema.GroupKind slice.
+func (s GroupKind) List() []schema.GroupKind {
+	res := make(sortableSliceOfGroupKind, 0, len(s))
 	for key := range s {
 		res = append(res, key)
 	}
 	sort.Sort(res)
-	return []api.Matcher(res)
+	return []schema.GroupKind(res)
 }
 
 // UnsortedList returns the slice with contents in random order.
-func (s Matcher) UnsortedList() []api.Matcher {
-	res := make([]api.Matcher, 0, len(s))
+func (s GroupKind) UnsortedList() []schema.GroupKind {
+	res := make([]schema.GroupKind, 0, len(s))
 	for key := range s {
 		res = append(res, key)
 	}
@@ -188,37 +188,31 @@ func (s Matcher) UnsortedList() []api.Matcher {
 }
 
 // Returns a single element from the set.
-func (s Matcher) PopAny() (api.Matcher, bool) {
+func (s GroupKind) PopAny() (schema.GroupKind, bool) {
 	for key := range s {
 		s.Delete(key)
 		return key, true
 	}
-	var zeroValue api.Matcher
+	var zeroValue schema.GroupKind
 	return zeroValue, false
 }
 
 // Len returns the size of the set.
-func (s Matcher) Len() int {
+func (s GroupKind) Len() int {
 	return len(s)
 }
 
-func lessMatcher(lhs, rhs api.Matcher) bool {
-	if lhs.Name < rhs.Name {
+func lessGroupKind(lhs, rhs schema.GroupKind) bool {
+	if lhs.Group < rhs.Group {
 		return true
 	}
-	if lhs.Name > rhs.Name {
+	if lhs.Group > rhs.Group {
 		return false
 	}
-	if lhs.Namespace < rhs.Namespace {
+	if lhs.Kind < rhs.Kind {
 		return true
 	}
-	if lhs.Namespace > rhs.Namespace {
-		return false
-	}
-	if lhs.Selector < rhs.Selector {
-		return true
-	}
-	if lhs.Selector > rhs.Selector {
+	if lhs.Kind > rhs.Kind {
 		return false
 	}
 	return false

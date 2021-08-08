@@ -19,8 +19,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -29,7 +27,6 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	clientcmdutil "kmodules.xyz/client-go/tools/clientcmd"
 	"kubepack.dev/kubepack/pkg/lib"
-	"kubepack.dev/module/controllers/pkg"
 	"os"
 	"path/filepath"
 
@@ -42,6 +39,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 	pkgcontrollers "kubepack.dev/module/controllers/pkg"
+	lib2 "kubepack.dev/module/pkg/watchers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -122,15 +120,14 @@ func main() {
 	}
 
 	if err = (&pkgcontrollers.ModuleReconciler{
-		Client:           mgr.GetClient(),
-		Scheme:           mgr.GetScheme(),
-		DC:               dynamic.NewForConfigOrDie(config),
-		ClientGetter:     getter,
-		Mapper:           discovery.NewResourceMapper(mgr.GetRESTMapper()),
-		ChartRegistry:    lib.DefaultRegistry,
-		Mgr:              mgr,
-		ModuleToMatchers: make(map[types.NamespacedName]map[schema.GroupVersionKind][]pkg.Matcher),
-		KindToModule:     make(map[schema.GroupVersionKind]map[pkg.Matcher][]types.NamespacedName),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		DC:            dynamic.NewForConfigOrDie(config),
+		ClientGetter:  getter,
+		Mapper:        discovery.NewResourceMapper(mgr.GetRESTMapper()),
+		ChartRegistry: lib.DefaultRegistry,
+		Mgr:           mgr,
+		Watchers:      lib2.New(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Module")
 		os.Exit(1)
