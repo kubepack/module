@@ -14,4 +14,12 @@ resources:
   kind: Module
   path: kubepack.dev/module/apis/pkg/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: kubepack.com
+  group: pkg
+  kind: ModuleExecStatus
+  path: kubepack.dev/module/apis/pkg/v1alpha1
+  version: v1alpha1
 version: "3"

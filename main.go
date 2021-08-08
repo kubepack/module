@@ -19,6 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -27,8 +30,6 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	clientcmdutil "kmodules.xyz/client-go/tools/clientcmd"
 	"kubepack.dev/kubepack/pkg/lib"
-	"os"
-	"path/filepath"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -37,12 +38,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
-	pkgcontrollers "kubepack.dev/module/controllers/pkg"
-	lib2 "kubepack.dev/module/pkg/watchers"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
+	pkgv1alpha1 "kubepack.dev/module/apis/pkg/v1alpha1"
+	pkgcontrollers "kubepack.dev/module/controllers/pkg"
+	lib2 "kubepack.dev/module/pkg/watchers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -55,6 +58,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(pkgapi.AddToScheme(scheme))
+	utilruntime.Must(pkgv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

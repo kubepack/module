@@ -1,0 +1,7 @@
+apiVersion: pkg.kubepack.com/v1alpha1
+kind: ModuleExecStatus
+metadata:
+  name: moduleexecstatus-sample
+spec:
+  # Add fields here
+  foo: bar

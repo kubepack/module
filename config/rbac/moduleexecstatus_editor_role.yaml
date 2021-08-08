@@ -1,0 +1,24 @@
+# permissions for end users to edit moduleexecstatuses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: moduleexecstatus-editor-role
+rules:
+- apiGroups:
+  - pkg.kubepack.com
+  resources:
+  - moduleexecstatuses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pkg.kubepack.com
+  resources:
+  - moduleexecstatuses/status
+  verbs:
+  - get
