@@ -16,9 +16,27 @@ type NamespacedName struct {
 
 // +genset=true
 type Matcher struct {
-	Name      string
-	Namespace string
-	Selector  *metav1.LabelSelector
+	Name      string                `json:"name"`
+	Namespace string                `json:"namespace,omitempty"`
+	Selector  *metav1.LabelSelector `json:"selector,omitempty"`
+	Owner     *OwnerReference       `json:"owner,omitempty"`
+}
+
+// OwnerReference contains enough information to let you identify an owning
+// object. An owning object must be in the same namespace as the dependent, or
+// be cluster-scoped, so there is no namespace field.
+type OwnerReference struct {
+	// API version of the referent.
+	APIVersion string `json:"apiVersion"`
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+	Kind string `json:"kind"`
+	// Name of the referent.
+	// More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name"`
+	// If true, this reference points to the managing controller.
+	// +optional
+	Controller *bool `json:"controller,omitempty"`
 }
 
 func (m *Matcher) MapIndex() uint64 {
@@ -73,5 +91,30 @@ func (m Matcher) Matches(o client.Object) bool {
 	if err != nil {
 		return false
 	}
-	return selector.Matches(labels.Set(o.GetLabels()))
+	if !selector.Matches(labels.Set(o.GetLabels())) {
+		return false
+	}
+	if m.Owner != nil {
+		var found bool
+		for _, owner := range o.GetOwnerReferences() {
+			if owner.APIVersion == m.Owner.APIVersion &&
+				owner.Kind == m.Owner.Kind &&
+				owner.Name == m.Owner.Name &&
+				matchesController(owner.Controller, m.Owner.Controller) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func matchesController(actual, expected *bool) bool {
+	if expected != nil && *expected {
+		return actual != nil && *actual
+	}
+	return false
 }
