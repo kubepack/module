@@ -86,6 +86,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
+	matchers := map[schema.GroupVersionKind][]pkg.Matcher{}
 	for _, action := range module.Spec.Actions {
 		runner := pkg.ActionRunner{
 			DC:            r.DC,
@@ -96,16 +97,23 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			Action:        action,
 			EdgeList:      module.Spec.EdgeList,
 			ChartRegistry: r.ChartRegistry,
-			Matchers:      map[schema.GroupVersionKind][]pkg.Matcher{},
+			Matchers:      matchers,
 		}
 		err := runner.Execute()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-
-		// runner.Matchers
-
 	}
+
+	r.mu.Lock()
+	pkg.UpdateMatchers(
+		r.ModuleToMatchers,
+		r.KindToModule,
+		req.NamespacedName,
+		pkg.CompareMatchers(r.ModuleToMatchers[req.NamespacedName], matchers),
+	)
+	r.mu.Unlock()
+
 	return ctrl.Result{}, nil
 }
 

@@ -36,7 +36,7 @@ var ModuleStore = map[string]*engine.State{}
 type Matcher struct {
 	Name      string
 	Namespace string
-	Selector  *metav1.LabelSelector
+	Selector  metav1.LabelSelector
 }
 
 func (m Matcher) Matches(o client.Object) bool {
@@ -46,7 +46,8 @@ func (m Matcher) Matches(o client.Object) bool {
 	if m.Name != "" && o.GetName() != m.Name {
 		return false
 	}
-	selector, err := metav1.LabelSelectorAsSelector(m.Selector) // nil means select nothing
+	// by default select is Empty which means match everything
+	selector, err := metav1.LabelSelectorAsSelector(&m.Selector) // nil means select nothing
 	if err != nil {
 		return false
 	}
@@ -207,14 +208,17 @@ func (a *ActionRunner) Apply() *ActionRunner {
 			}
 
 			gvk := schema.FromAPIVersionAndKind(o.ObjRef.Src.Target.APIVersion, o.ObjRef.Src.Target.Kind)
-			a.Matchers[gvk] = []Matcher{
-				{
-					Name:      name,
-					Namespace: a.Namespace,
-					Selector:  selector,
-					// owner ?
-				},
+
+			m := Matcher{
+				Name:      name,
+				Namespace: a.Namespace,
+				// Selector:  selector,
+				// owner ?
 			}
+			if selector != nil {
+				m.Selector = *selector
+			}
+			a.Matchers[gvk] = append(a.Matchers[gvk], m)
 			obj, err = finder.Locate(&rsapi.ObjectLocator{
 				Src: rsapi.ObjectRef{
 					Target:    o.ObjRef.Src.Target,
