@@ -23,6 +23,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"kmodules.xyz/client-go/discovery"
+	"kubepack.dev/lib-helm/pkg/engine"
 	"kubepack.dev/lib-helm/pkg/repo"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 	"kubepack.dev/module/pkg/api"
@@ -78,6 +79,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
+	moduleStore := map[string]*engine.State{}
 	matchers := map[schema.GroupVersionKind][]api.Matcher{}
 	for _, action := range module.Spec.Actions {
 		runner := executor.ActionExecutor{
@@ -90,6 +92,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			EdgeList:      module.Spec.EdgeList,
 			ChartRegistry: r.ChartRegistry,
 			Matchers:      matchers,
+			ModuleStore:   moduleStore,
 			Log:           log,
 		}
 		err := runner.Execute()

@@ -31,8 +31,6 @@ import (
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 )
 
-var ModuleStore = map[string]*engine.State{}
-
 type ActionExecutor struct {
 	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
@@ -47,6 +45,8 @@ type ActionExecutor struct {
 	ChartRegistry repo.IRegistry
 
 	Matchers map[schema.GroupVersionKind][]api.Matcher
+
+	ModuleStore map[string]*engine.State
 
 	Log logr.Logger
 }
@@ -126,7 +126,7 @@ func (a *ActionExecutor) Apply() *ActionExecutor {
 			name = o.ObjRef.Src.Name
 
 			if o.ObjRef.Src.UseAction != "" && name == "" {
-				state, ok := ModuleStore[o.ObjRef.Src.UseAction]
+				state, ok := a.ModuleStore[o.ObjRef.Src.UseAction]
 				if !ok {
 					a.err = fmt.Errorf("can't find flow state for release %s", o.ObjRef.Src.UseAction)
 					return a
@@ -325,7 +325,7 @@ func (a *ActionExecutor) Apply() *ActionExecutor {
 	if err != nil {
 		a.err = err
 	}
-	ModuleStore[s2.ReleaseName] = s2
+	a.ModuleStore[s2.ReleaseName] = s2
 
 	return a
 }
