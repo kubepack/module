@@ -1,0 +1,55 @@
+apiVersion: pkg.kubepack.com/v1alpha1
+kind: Module
+metadata:
+  creationTimestamp: null
+  name: myflow
+  namespace: demo
+spec:
+  actions:
+  - chartRef:
+      name: first
+      url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
+      version: 0.1.0
+    name: first
+    prerequisites:
+      requiredResources:
+      - group: apps
+        resource: deployments
+        version: v1
+    readinessCriteria:
+      timeout: 0s
+      waitForReconciled: true
+  - chartRef:
+      name: third
+      url: https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
+      version: 0.1.0
+    name: third
+    overrideValues:
+    - objref:
+        src:
+          selector:
+            matchLabels:
+              app.kubernetes.io/instance: '{{ .Release.Name }}'
+              app.kubernetes.io/name: '{{ .Release.Name }}'
+          target:
+            apiVersion: v1
+            kind: Pod
+          useAction: first
+      values:
+      - key: first.name
+        value:
+          fieldPath: .metadata.name
+          type: string
+      - key: first.port
+        value:
+          fieldPathTemplate: '{{ jp "{.spec.containers[0].ports[0].containerPort}" . }}'
+          type: string
+    prerequisites:
+      requiredResources:
+      - group: apps
+        resource: deployments
+        version: v1
+    readinessCriteria:
+      timeout: 0s
+      waitForReconciled: true
+status: {}

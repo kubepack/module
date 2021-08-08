@@ -13,7 +13,7 @@ var myflow = &pkgapi.Module{
 	},
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "myflow",
-		Namespace: "default",
+		Namespace: "demo",
 	},
 	Spec: pkgapi.ModuleSpec{
 		Actions: []pkgapi.Action{

@@ -139,7 +139,7 @@ func main____() {
 		panic(err)
 	}
 
-	namespace := "default"
+	namespace := "demo"
 	i, err := action.NewInstaller(getter, namespace, "app")
 	if err != nil {
 		klog.Fatal(err)
@@ -183,7 +183,7 @@ func main_install_or_upgrdae() {
 	}
 	getter := clientcmdutil.NewClientGetter(&kubeconfig)
 
-	deployer, err := action.NewDeployer(getter, "default", "secrets")
+	deployer, err := action.NewDeployer(getter, "demo", "secrets")
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func main_install_or_upgrdae() {
 		Wait:                     false,
 		Devel:                    false,
 		Timeout:                  0,
-		Namespace:                "default",
+		Namespace:                "demo",
 		ReleaseName:              name,
 		Description:              "",
 		Atomic:                   false,
