@@ -1,4 +1,13 @@
-# hell-flow
+# module
+
+## Run Controller
+
+```bash
+make manifests fmt
+kubectl apply -f config/crd/bases/pkg.kubepack.com_modules.yaml
+
+make run
+```
 
 ```
 helm repo add module-testdata https://raw.githubusercontent.com/kubepack/module-testdata/master/stable/
