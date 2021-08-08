@@ -5,13 +5,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/go-logr/logr"
-	"kubepack.dev/lib-helm/pkg/repo"
-	"kubepack.dev/module/pkg/api"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,6 +25,7 @@ import (
 	"kubepack.dev/kubepack/pkg/lib"
 	"kubepack.dev/lib-helm/pkg/action"
 	"kubepack.dev/lib-helm/pkg/engine"
+	"kubepack.dev/lib-helm/pkg/repo"
 	"kubepack.dev/lib-helm/pkg/values"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 )
@@ -44,7 +43,7 @@ type ActionExecutor struct {
 
 	ChartRegistry repo.IRegistry
 
-	Matchers map[schema.GroupVersionKind][]api.Matcher
+	Matchers map[schema.GroupVersionKind][]pkgapi.Matcher
 
 	ModuleStore map[string]*engine.State
 
@@ -190,7 +189,7 @@ func (a *ActionExecutor) Apply() *ActionExecutor {
 
 			gvk := schema.FromAPIVersionAndKind(o.ObjRef.Src.Target.APIVersion, o.ObjRef.Src.Target.Kind)
 
-			m := api.Matcher{
+			m := pkgapi.Matcher{
 				Name:      name,
 				Namespace: a.Namespace,
 				Selector:  selector,

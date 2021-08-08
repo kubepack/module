@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"kubepack.dev/module/pkg/api"
 	"kubepack.dev/module/pkg/executor"
 	"log"
 	"path/filepath"
@@ -250,7 +249,7 @@ func main_() {
 			Action:        action,
 			EdgeList:      nil,
 			ChartRegistry: lib.DefaultRegistry,
-			Matchers:      map[schema.GroupVersionKind][]api.Matcher{},
+			Matchers:      map[schema.GroupVersionKind][]pkgapi.Matcher{},
 		}
 		err := runner.Execute()
 		if err != nil {

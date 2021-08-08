@@ -26,7 +26,6 @@ import (
 	"kubepack.dev/lib-helm/pkg/engine"
 	"kubepack.dev/lib-helm/pkg/repo"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
-	"kubepack.dev/module/pkg/api"
 	"kubepack.dev/module/pkg/executor"
 	"kubepack.dev/module/pkg/watchers"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -80,7 +79,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// FIX(tamal): Observed generation checking is not enough, since the overridden values can change.
 
 	moduleStore := map[string]*engine.State{}
-	matchers := map[schema.GroupVersionKind][]api.Matcher{}
+	matchers := map[schema.GroupVersionKind][]pkgapi.Matcher{}
 	for _, action := range module.Spec.Actions {
 		runner := executor.ActionExecutor{
 			DC:            r.DC,

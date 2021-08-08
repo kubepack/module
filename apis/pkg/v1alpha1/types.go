@@ -1,4 +1,4 @@
-package api
+package v1alpha1
 
 import (
 	"encoding/gob"
@@ -8,13 +8,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +genset=true
-type NamespacedName struct {
-	Namespace string
-	Name      string
+type GroupVersionKind struct {
+	Group   string `json:"group"`
+	Version string `json:"version"`
+	Kind    string `json:"kind"`
 }
 
-// +genset=true
 type Matcher struct {
 	Name      string                `json:"name"`
 	Namespace string                `json:"namespace,omitempty"`

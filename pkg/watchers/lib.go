@@ -3,18 +3,18 @@ package watchers
 import (
 	"context"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sync"
 
 	"gomodules.xyz/sets"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"kubepack.dev/module/pkg/api"
+	"kubepack.dev/module/apis/pkg/v1alpha1"
 	extrasets "kubepack.dev/module/pkg/util/sets"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type ModuleWatchers struct {
@@ -26,7 +26,7 @@ type ModuleWatchers struct {
 	Watchers extrasets.GroupKind
 
 	// map_index -> Matcher
-	Matchers map[uint64]*api.Matcher
+	Matchers map[uint64]*v1alpha1.Matcher
 
 	// Module -> Matchers
 	ModuleToMatchers map[types.NamespacedName]map[schema.GroupVersionKind]sets.Uint64
@@ -38,7 +38,7 @@ type ModuleWatchers struct {
 func New() *ModuleWatchers {
 	return &ModuleWatchers{
 		Watchers:         extrasets.NewGroupKind(),
-		Matchers:         map[uint64]*api.Matcher{},
+		Matchers:         map[uint64]*v1alpha1.Matcher{},
 		ModuleToMatchers: map[types.NamespacedName]map[schema.GroupVersionKind]sets.Uint64{},
 		KindToModule:     map[schema.GroupVersionKind]map[uint64]extrasets.NamespacedName{},
 	}
@@ -83,7 +83,7 @@ func (w *ModuleWatchers) UpdateMatchers(
 	mgr ctrl.Manager,
 	ctrl2 controller.Controller,
 	module types.NamespacedName,
-	matchers map[schema.GroupVersionKind][]api.Matcher) {
+	matchers map[schema.GroupVersionKind][]v1alpha1.Matcher) {
 
 	w.lock.Lock()
 	defer w.lock.Unlock()
