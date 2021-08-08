@@ -7,6 +7,8 @@ make manifests fmt
 kubectl apply -f config/crd/bases/pkg.kubepack.com_modules.yaml
 
 make run
+
+kubectl apply -f cmd/myflow.yaml
 ```
 
 ```
