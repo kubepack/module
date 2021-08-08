@@ -8,6 +8,7 @@ kubectl apply -f config/crd/bases/pkg.kubepack.com_modules.yaml
 
 make run
 
+kubectl create ns demo
 kubectl apply -f cmd/myflow.yaml
 ```
 
