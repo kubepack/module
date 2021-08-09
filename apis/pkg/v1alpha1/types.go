@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"encoding/gob"
+	"fmt"
 	"github.com/cespare/xxhash"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,7 +49,9 @@ func (m *Matcher) MapIndex() uint64 {
 		return 0
 	}
 	h := xxhash.New()
-	_ = gob.NewEncoder(h).Encode(m)
+	if err := gob.NewEncoder(h).Encode(m); err != nil {
+		panic(fmt.Errorf("failed to gob encode %#v: %w", m, err))
+	}
 	return h.Sum64()
 }
 
