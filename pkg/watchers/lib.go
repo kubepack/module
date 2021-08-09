@@ -83,7 +83,7 @@ func (w *ModuleWatchers) UpdateMatchers(
 	mgr ctrl.Manager,
 	ctrl2 controller.Controller,
 	module types.NamespacedName,
-	matchers map[schema.GroupVersionKind][]v1alpha1.Matcher) {
+	matchers map[schema.GroupVersionKind][]v1alpha1.Matcher) []v1alpha1.Watcher {
 
 	w.lock.Lock()
 	defer w.lock.Unlock()
@@ -101,7 +101,7 @@ func (w *ModuleWatchers) UpdateMatchers(
 
 	diff := w.compareMatchers(module, latest)
 	if diff.Empty() {
-		return
+		return nil
 	}
 
 	w.ModuleToMatchers[module] = latest
@@ -147,6 +147,23 @@ func (w *ModuleWatchers) UpdateMatchers(
 			w.Watchers.Insert(gvk.GroupKind())
 		}
 	}
+
+	watchers := make([]v1alpha1.Watcher, 0, len(latest))
+	for gvk, idSet := range latest {
+		matchers := make([]v1alpha1.Matcher, 0, idSet.Len())
+		for midx := range idSet {
+			matchers = append(matchers, *w.Matchers[midx])
+		}
+		watchers = append(watchers, v1alpha1.Watcher{
+			Kind: v1alpha1.GroupVersionKind{
+				Group:   gvk.Group,
+				Version: gvk.Version,
+				Kind:    gvk.Kind,
+			},
+			Matchers: nil,
+		})
+	}
+	return watchers
 }
 
 func (w *ModuleWatchers) DeleteModule(module types.NamespacedName) {

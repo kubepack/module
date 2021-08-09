@@ -18,10 +18,12 @@ package pkg
 
 import (
 	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
+	cc "kmodules.xyz/client-go/client"
 	"kmodules.xyz/client-go/discovery"
 	"kubepack.dev/lib-helm/pkg/engine"
 	"kubepack.dev/lib-helm/pkg/repo"
@@ -100,12 +102,27 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	r.Watchers.UpdateMatchers(
+	modWatchers := r.Watchers.UpdateMatchers(
 		ctx,
 		r.Mgr,
 		r.ctrl,
 		req.NamespacedName, matchers)
-
+	if modWatchers != nil {
+		objKey := &pkgapi.ModuleExecStatus{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      req.Name,
+				Namespace: req.Namespace,
+			},
+		}
+		_, _, err := cc.CreateOrPatch(ctx, r.Client, objKey, func(in client.Object) client.Object {
+			i := in.(*pkgapi.ModuleExecStatus)
+			i.Status.Watchers = modWatchers
+			return i
+		}, metav1.PatchOptions{})
+		if err != nil {
+			log.Error(err, "failed to create/patch module status")
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
