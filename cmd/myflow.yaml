@@ -3,7 +3,7 @@ kind: Module
 metadata:
   creationTimestamp: null
   name: myflow
-  namespace: default
+  namespace: demo
 spec:
   actions:
   - chartRef:
