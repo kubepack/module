@@ -116,11 +116,20 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		_, _, err := cc.CreateOrPatch(ctx, r.Client, objKey, func(in client.Object) client.Object {
 			i := in.(*pkgapi.ModuleExecStatus)
-			i.Status.Watchers = modWatchers
+			ctrler := metav1.NewControllerRef(&module, pkgapi.GroupVersion.WithKind("Module"))
+			i.OwnerReferences = []metav1.OwnerReference{
+				*ctrler,
+			}
 			return i
 		}, metav1.PatchOptions{})
 		if err != nil {
-			log.Error(err, "failed to create/patch module status")
+			log.Error(err, "failed to create/patch ModuleExecStatus")
+		}
+
+		objKey.Status.Watchers = modWatchers
+		err = r.Client.Status().Update(ctx, objKey)
+		if err != nil {
+			log.Error(err, "failed to update status of ModuleExecStatus")
 		}
 	}
 	return ctrl.Result{}, nil

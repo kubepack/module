@@ -9,6 +9,7 @@ import (
 )
 
 type GroupVersionKind struct {
+	// +optional
 	Group   string `json:"group"`
 	Version string `json:"version"`
 	Kind    string `json:"kind"`

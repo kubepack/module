@@ -160,7 +160,7 @@ func (w *ModuleWatchers) UpdateMatchers(
 				Version: gvk.Version,
 				Kind:    gvk.Kind,
 			},
-			Matchers: nil,
+			Matchers: matchers,
 		})
 	}
 	return watchers
