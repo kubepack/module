@@ -16,10 +16,14 @@ type GroupVersionKind struct {
 }
 
 type Matcher struct {
-	Name      string                `json:"name"`
-	Namespace string                `json:"namespace,omitempty"`
-	Selector  *metav1.LabelSelector `json:"selector,omitempty"`
-	Owner     *OwnerReference       `json:"owner,omitempty"`
+	// +optional
+	Name string `json:"name,omitempty"`
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+	// +optional
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
+	// +optional
+	Owner *OwnerReference `json:"owner,omitempty"`
 }
 
 // OwnerReference contains enough information to let you identify an owning

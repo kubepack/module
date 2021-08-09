@@ -125,8 +125,6 @@ spec:
                                   contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
-                        required:
-                        - name
                         type: object
                       type: array
                     version:
