@@ -42,10 +42,18 @@ spec:
               watchers:
                 items:
                   properties:
-                    group:
-                      type: string
                     kind:
-                      type: string
+                      properties:
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - kind
+                      - version
+                      type: object
                     matchers:
                       items:
                         properties:
@@ -127,12 +135,9 @@ spec:
                             type: object
                         type: object
                       type: array
-                    version:
-                      type: string
                   required:
                   - kind
                   - matchers
-                  - version
                   type: object
                 type: array
             type: object

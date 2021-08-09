@@ -31,7 +31,7 @@ type ModuleExecStatusStatus struct {
 }
 
 type Watcher struct {
-	Kind     GroupVersionKind `json:",inline"`
+	Kind     GroupVersionKind `json:"kind"`
 	Matchers []Matcher        `json:"matchers"`
 }
 
