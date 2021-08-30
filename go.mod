@@ -13,8 +13,10 @@ require (
 	k8s.io/cli-runtime v0.21.1
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.8.0
-	kmodules.xyz/client-go v0.0.0-20210809004558-319779b5909c
-	kmodules.xyz/resource-metadata v0.5.8-0.20210808211643-76995fcb5c3a
+	kmodules.xyz/client-go dd0503cf99cf3b6abb635d8945a8d7d8fed901d9
+	kmodules.xyz/custom-resources 83db827677cf5651491478fa85707d62416cf679
+	kmodules.xyz/resource-metadata dcc1abc08aa00646b9474f7702b45c798b3ce66c
+	kmodules.xyz/webhook-runtime e489faf01981d2f3afa671989388c7b6f22b6baa
 	kubepack.dev/kubepack v0.3.4-0.20210804131842-a30a0a1ca5c8
 	kubepack.dev/lib-helm v0.2.4-0.20210808214849-0b6543ef3b42
 	sigs.k8s.io/cli-utils v0.25.0
