@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/cespare/xxhash"
+	"github.com/zeebo/xxh3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +48,7 @@ func (m *Matcher) MapIndex() uint64 {
 	if m == nil {
 		return 0
 	}
-	h := xxhash.New()
+	h := xxh3.New()
 	if err := gob.NewEncoder(h).Encode(m); err != nil {
 		panic(fmt.Errorf("failed to gob encode %#v: %w", m, err))
 	}
