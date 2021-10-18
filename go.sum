@@ -1209,6 +1209,8 @@ gomodules.xyz/sets v0.0.0-20200930152147-4f4543544799/go.mod h1:jKgNp01/iDs+svOW
 gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
 gomodules.xyz/sets v0.2.0 h1:T8YPBWDaPGh/+HBjfL2JYdWeNqxNMoMofEdlvhLKE9w=
 gomodules.xyz/sets v0.2.0/go.mod h1:jKgNp01/iDs+svOWXaPk5cKP3VXy0mWUoTF/ore+aMc=
+gomodules.xyz/sets/kubernetes v0.2.0 h1:5eQV5/2dUcuVHb9z+Fy5B0uB5R5dHhySev7ZZzhnFe0=
+gomodules.xyz/sets/kubernetes v0.2.0/go.mod h1:N17t2fAiJF2E3l78VmwyTO90BkOtNd/SQ/0X20K8wgM=
 gomodules.xyz/wait v0.0.0-20210218105358-639bd9211545/go.mod h1:g/epKzZQuCqgvhzhaoG4cSBNGHqnOrhFR4Q7szDJ1JM=
 gomodules.xyz/x v0.0.5 h1:2ysXizs7gC9QpFds6qNGxMuzNwBzhM9VUfGVSv9Vv+E=
 gomodules.xyz/x v0.0.5/go.mod h1:EGy7cB7ifSuOcbNFc0U1zUPTf5yY8RtXVJlAlhGS9OE=

@@ -1,14 +1,15 @@
-package sets
+package kubernetes
 
 import (
 	"reflect"
 	"sort"
 
+	"gomodules.xyz/sets"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // sets.NamespacedName is a set of types.NamespacedNames, implemented via map[types.NamespacedName]struct{} for minimal memory consumption.
-type NamespacedName map[types.NamespacedName]Empty
+type NamespacedName map[types.NamespacedName]sets.Empty
 
 // NewNamespacedName creates a NamespacedName from a list of values.
 func NewNamespacedName(items ...types.NamespacedName) NamespacedName {
@@ -32,7 +33,7 @@ func NamespacedNameKeySet(theMap interface{}) NamespacedName {
 // Insert adds items to the set.
 func (s NamespacedName) Insert(items ...types.NamespacedName) NamespacedName {
 	for _, item := range items {
-		s[item] = Empty{}
+		s[item] = sets.Empty{}
 	}
 	return s
 }

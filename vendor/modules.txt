@@ -668,6 +668,9 @@ gomodules.xyz/pointer
 # gomodules.xyz/sets v0.2.0
 ## explicit
 gomodules.xyz/sets
+# gomodules.xyz/sets/kubernetes v0.2.0
+## explicit
+gomodules.xyz/sets/kubernetes
 # gomodules.xyz/x v0.0.5
 gomodules.xyz/x/strings
 # google.golang.org/api v0.36.0 => google.golang.org/api v0.20.0

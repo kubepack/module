@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"kubepack.dev/module/apis/pkg/v1alpha1"
-	extrasets "kubepack.dev/module/pkg/util/sets"
+	ksets "gomodules.xyz/sets/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -23,7 +23,7 @@ type ModuleWatchers struct {
 	// WARNING: How to handle version skew
 	// example: different locators depend on different version
 	// possible answer, matchers depend on object metadata, so same for every version
-	Watchers extrasets.GroupKind
+	Watchers ksets.GroupKind
 
 	// map_index -> Matcher
 	Matchers map[uint64]*v1alpha1.Matcher
@@ -32,15 +32,15 @@ type ModuleWatchers struct {
 	ModuleToMatchers map[types.NamespacedName]map[schema.GroupVersionKind]sets.Uint64
 
 	// Kind -> Matchers -> []Module
-	KindToModule map[schema.GroupVersionKind]map[uint64]extrasets.NamespacedName
+	KindToModule map[schema.GroupVersionKind]map[uint64]ksets.NamespacedName
 }
 
 func New() *ModuleWatchers {
 	return &ModuleWatchers{
-		Watchers:         extrasets.NewGroupKind(),
+		Watchers:         ksets.NewGroupKind(),
 		Matchers:         map[uint64]*v1alpha1.Matcher{},
 		ModuleToMatchers: map[types.NamespacedName]map[schema.GroupVersionKind]sets.Uint64{},
-		KindToModule:     map[schema.GroupVersionKind]map[uint64]extrasets.NamespacedName{},
+		KindToModule:     map[schema.GroupVersionKind]map[uint64]ksets.NamespacedName{},
 	}
 }
 
@@ -109,10 +109,10 @@ func (w *ModuleWatchers) UpdateMatchers(
 	for gvk, idSet := range diff.Add {
 		existing := w.KindToModule[gvk]
 		if existing == nil {
-			existing = map[uint64]extrasets.NamespacedName{}
+			existing = map[uint64]ksets.NamespacedName{}
 		}
 		for id := range idSet {
-			existing[id] = extrasets.NewNamespacedName(module).Union(existing[id])
+			existing[id] = ksets.NewNamespacedName(module).Union(existing[id])
 		}
 		w.KindToModule[gvk] = existing
 	}

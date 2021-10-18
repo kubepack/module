@@ -1,14 +1,15 @@
-package sets
+package kubernetes
 
 import (
 	"reflect"
 	"sort"
 
+	"gomodules.xyz/sets"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // sets.GroupKind is a set of schema.GroupKinds, implemented via map[schema.GroupKind]struct{} for minimal memory consumption.
-type GroupKind map[schema.GroupKind]Empty
+type GroupKind map[schema.GroupKind]sets.Empty
 
 // NewGroupKind creates a GroupKind from a list of values.
 func NewGroupKind(items ...schema.GroupKind) GroupKind {
@@ -32,7 +33,7 @@ func GroupKindKeySet(theMap interface{}) GroupKind {
 // Insert adds items to the set.
 func (s GroupKind) Insert(items ...schema.GroupKind) GroupKind {
 	for _, item := range items {
-		s[item] = Empty{}
+		s[item] = sets.Empty{}
 	}
 	return s
 }
