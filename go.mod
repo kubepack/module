@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
-	github.com/zeebo/xxh3 v1.0.0-rc3
+	github.com/zeebo/xxh3 v1.0.0-rc2
 	gomodules.xyz/sets v0.2.0
 	gomodules.xyz/sets/kubernetes v0.2.0
 	k8s.io/api v0.21.1
@@ -14,8 +14,8 @@ require (
 	k8s.io/cli-runtime v0.21.1
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.8.0
-	kmodules.xyz/client-go v0.0.0-20210809004558-319779b5909c
-	kmodules.xyz/resource-metadata v0.5.8-0.20210808211643-76995fcb5c3a
+	kmodules.xyz/client-go v0.0.0-20211028132207-0cf6ea46b030
+	kmodules.xyz/resource-metadata v0.6.7
 	kubepack.dev/kubepack v0.3.4-0.20210804131842-a30a0a1ca5c8
 	kubepack.dev/lib-helm v0.2.4-0.20210808214849-0b6543ef3b42
 	sigs.k8s.io/cli-utils v0.25.0
@@ -129,4 +129,10 @@ replace k8s.io/utils => k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 
 replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20210427030912-90eeee3bc4ad
 
-replace github.com/satori/go.uuid => github.com/gofrs/uuid v4.0.0+incompatible
+replace github.com/satori/go.uuid => github.com/gomodules/uuid v4.0.0+incompatible
+
+replace github.com/dgrijalva/jwt-go => github.com/gomodules/jwt v3.2.2+incompatible
+
+replace github.com/golang-jwt/jwt => github.com/golang-jwt/jwt v3.2.2+incompatible
+
+replace github.com/form3tech-oss/jwt-go => github.com/form3tech-oss/jwt-go v3.2.5+incompatible
