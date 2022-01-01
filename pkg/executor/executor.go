@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"text/template"
 	"time"
@@ -14,13 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/discovery"
-	dynamicfactory "kmodules.xyz/client-go/dynamic/factory"
 	rsapi "kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
-	"kmodules.xyz/resource-metadata/pkg/graph"
 	"kmodules.xyz/resource-metadata/pkg/tableconvertor"
+	"kubeops.dev/ui-server/pkg/graph"
 	"kubepack.dev/kubepack/apis/kubepack/v1alpha1"
 	"kubepack.dev/kubepack/pkg/lib"
 	"kubepack.dev/lib-helm/pkg/action"
@@ -31,7 +30,7 @@ import (
 )
 
 type ActionExecutor struct {
-	DC           dynamic.Interface
+	Client       client.Client
 	ClientGetter genericclioptions.RESTClientGetter
 	Mapper       discovery.ResourceMapper
 
@@ -111,8 +110,7 @@ func (a *ActionExecutor) Apply() *ActionExecutor {
 	}
 
 	finder := graph.ObjectFinder{
-		Factory: dynamicfactory.New(a.DC),
-		Mapper:  a.Mapper,
+		Client: a.Client,
 	}
 
 	for _, o := range a.Action.ValueOverrides {
@@ -397,7 +395,7 @@ func (a *ActionExecutor) WaitUntilReady() {
 
 func (a *ActionExecutor) resourceExists(ctx context.Context, resources []metav1.GroupVersionResource) bool {
 	for _, r := range resources {
-		exists, err := IsResourceExistsAndReady(ctx, a.DC, a.Mapper, schema.GroupVersionResource{
+		exists, err := IsResourceExistsAndReady(ctx, a.Client, a.Mapper, schema.GroupVersionResource{
 			Group:    r.Group,
 			Version:  r.Version,
 			Resource: r.Resource,

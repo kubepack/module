@@ -6,9 +6,9 @@ import (
 	"sync"
 
 	"gomodules.xyz/sets"
-	ksets "gomodules.xyz/sets/kubernetes"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	ksets "kmodules.xyz/sets"
 	"kubepack.dev/module/apis/pkg/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

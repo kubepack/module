@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"kubepack.dev/module/pkg/executor"
 	"log"
 	"path/filepath"
 	"text/template"
@@ -18,6 +17,7 @@ import (
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -30,6 +30,8 @@ import (
 	"kubepack.dev/lib-helm/pkg/action"
 	"kubepack.dev/lib-helm/pkg/values"
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
+	"kubepack.dev/module/pkg/executor"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -233,15 +235,22 @@ func main_() {
 		log.Fatalf("Could not get Kubernetes config: %s", err)
 	}
 
-	dc := dynamic.NewForConfigOrDie(config)
 	mapper, err := getter.ToRESTMapper()
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	c, err := client.New(config, client.Options{
+		Scheme: clientgoscheme.Scheme,
+		Mapper: mapper,
+	})
 	if err != nil {
 		klog.Fatal(err)
 	}
 
 	for _, action := range myflow.Spec.Actions {
 		runner := executor.ActionExecutor{
-			DC:            dc,
+			Client:        c,
 			ClientGetter:  getter,
 			Mapper:        discovery.NewResourceMapper(mapper),
 			ModuleName:    myflow.Name,

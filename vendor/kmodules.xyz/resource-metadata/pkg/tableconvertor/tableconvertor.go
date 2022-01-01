@@ -29,7 +29,7 @@ import (
 	"kmodules.xyz/resource-metadata/pkg/tableconvertor/printers"
 
 	"gomodules.xyz/encoding/json"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1"
+	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metatable "k8s.io/apimachinery/pkg/api/meta/table"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TableConvertor interface {
@@ -55,7 +56,7 @@ func New(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (TableCo
 	return c, err
 }
 
-func NewForGVR(r *hub.Registry, client crd_cs.CustomResourceDefinitionInterface, gvr schema.GroupVersionResource, priority v1alpha1.Priority) (TableConvertor, error) {
+func NewForGVR(r *hub.Registry, kc client.Client, gvr schema.GroupVersionResource, priority v1alpha1.Priority) (TableConvertor, error) {
 	rd, err := r.LoadByGVR(gvr)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func NewForGVR(r *hub.Registry, client crd_cs.CustomResourceDefinitionInterface,
 	c := &convertor{
 		buf: &bytes.Buffer{},
 	}
-	err = c.init(filterColumnsWithDefaults(client, gvr, rd.Spec.Columns, priority))
+	err = c.init(filterColumnsWithDefaults(kc, gvr, rd.Spec.Columns, priority))
 	return c, err
 }
 
@@ -85,7 +86,7 @@ func filterColumns(columns []v1alpha1.ResourceColumnDefinition, priority v1alpha
 	return out
 }
 
-func filterColumnsWithDefaults(client crd_cs.CustomResourceDefinitionInterface, gvr schema.GroupVersionResource, columns []v1alpha1.ResourceColumnDefinition, priority v1alpha1.Priority) []v1alpha1.ResourceColumnDefinition {
+func filterColumnsWithDefaults(kc client.Client, gvr schema.GroupVersionResource, columns []v1alpha1.ResourceColumnDefinition, priority v1alpha1.Priority) []v1alpha1.ResourceColumnDefinition {
 	// columns are specified in resource description, so use those.
 	out := filterColumns(columns, priority)
 	if len(out) > 0 {
@@ -105,8 +106,9 @@ func filterColumnsWithDefaults(client crd_cs.CustomResourceDefinitionInterface, 
 	}
 
 	var additionalColumns []v1alpha1.ResourceColumnDefinition
-	if client != nil {
-		crd, err := client.Get(context.TODO(), fmt.Sprintf("%s.%s", gvr.Resource, gvr.Group), metav1.GetOptions{})
+	if kc != nil {
+		var crd crd_api.CustomResourceDefinition
+		err := kc.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s.%s", gvr.Resource, gvr.Group)}, &crd)
 		if err == nil {
 			for _, version := range crd.Spec.Versions {
 				if version.Name == gvr.Version && len(version.AdditionalPrinterColumns) > 0 {
@@ -184,13 +186,16 @@ func (c *convertor) rowFn(data interface{}) ([]interface{}, error) {
 			klog.Infof("Failed to parse. Reason: %v", err)
 			return nil, fmt.Errorf("invalid column definition %q", col.PathTemplate)
 		}
+		// Do nothing and continue execution.
+		// If printed, the result of the index operation is the string "<no value>".
+		// We mitigate that later.
+		tpl.Option("missingkey=default")
 		err = tpl.Execute(c.buf, data)
 		if err != nil {
 			klog.Infof("Failed to resolve template. Reason: %v", err)
 			return nil, fmt.Errorf("invalid column definition %q", col.PathTemplate)
 		}
-
-		v, err := cellForJSONValue(col.Name, col.Type, c.buf.String())
+		v, err := cellForJSONValue(col.Name, col.Type, strings.ReplaceAll(c.buf.String(), "<no value>", ""))
 		if err != nil {
 			return nil, err
 		}
@@ -202,8 +207,20 @@ func (c *convertor) rowFn(data interface{}) ([]interface{}, error) {
 
 func (c *convertor) ConvertToTable(ctx context.Context, obj runtime.Object, tableOptions runtime.Object) (*v1alpha1.Table, error) {
 	table := &v1alpha1.Table{
-		ColumnDefinitions: c.headers,
+		ColumnDefinitions: make([]v1alpha1.ResourceColumnDefinition, 0, len(c.headers)),
 	}
+
+	for _, def := range c.headers {
+		table.ColumnDefinitions = append(table.ColumnDefinitions, v1alpha1.ResourceColumnDefinition{
+			Name:         def.Name,
+			Type:         def.Type,
+			Format:       def.Format,
+			Description:  "", //skip
+			Priority:     0,  // skip
+			PathTemplate: "", // skip
+		})
+	}
+
 	if m, err := meta.ListAccessor(obj); err == nil {
 		table.ResourceVersion = m.GetResourceVersion()
 		table.Continue = m.GetContinue()
@@ -246,10 +263,11 @@ func fields(path string) []string {
 }
 
 func cellForJSONValue(colName, headerType string, value string) (interface{}, error) {
+	value = strings.TrimSpace(value)
 	switch headerType {
 	case "integer":
 		if value == "" {
-			return "<unknown>", nil
+			return UnknownValue, nil
 		}
 		i64, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -258,7 +276,7 @@ func cellForJSONValue(colName, headerType string, value string) (interface{}, er
 		return i64, nil
 	case "number":
 		if value == "" {
-			return "<unknown>", nil
+			return UnknownValue, nil
 		}
 		f64, err := strconv.ParseFloat(value, 64)
 		if err != nil {
@@ -267,7 +285,7 @@ func cellForJSONValue(colName, headerType string, value string) (interface{}, er
 		return f64, nil
 	case "boolean":
 		if value == "" {
-			return "<unset>", nil
+			return UnknownValue, nil
 		}
 		b, err := strconv.ParseBool(value)
 		if err != nil {
@@ -284,7 +302,7 @@ func cellForJSONValue(colName, headerType string, value string) (interface{}, er
 		}
 		return metatable.ConvertToHumanReadableDateType(timestamp), nil
 	case "object":
-		if strings.TrimSpace(value) == "" {
+		if value == "" || value == "null" {
 			return map[string]interface{}{}, nil
 		}
 		var obj interface{}
@@ -334,35 +352,35 @@ func defaultListColumns() []v1alpha1.ResourceColumnDefinition {
 			Type:         "string",
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
-			PathTemplate: `{{ jp "{.metadata.name}" . }}`,
+			PathTemplate: `{{ .metadata.name }}`,
 		},
 		{
 			Name:         "Namespace",
 			Type:         "string",
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
-			PathTemplate: `{{ jp "{.metadata.namespace}" . }}`,
+			PathTemplate: `{{ .metadata.namespace }}`,
 		},
 		{
 			Name:         "Labels",
 			Type:         "object",
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
-			PathTemplate: `{{ jp "{.metadata.labels}" . }}`,
+			PathTemplate: `{{ .metadata.labels | toRawJson }}`,
 		},
 		{
 			Name:         "Annotations",
 			Type:         "object",
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
-			PathTemplate: `{{ jp "{.metadata.annotations}" . }}`,
+			PathTemplate: `{{ .metadata.annotations | toRawJson }}`,
 		},
 		{
 			Name:         "Age",
 			Type:         "date",
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
-			PathTemplate: `{{ jp "{.metadata.creationTimestamp}" . }}`,
+			PathTemplate: `{{ .metadata.creationTimestamp }}`,
 		},
 	}
 }
@@ -374,35 +392,35 @@ func defaultDetailsColumns() []v1alpha1.ResourceColumnDefinition {
 			Type:         "string",
 			Format:       "",
 			Priority:     int32(v1alpha1.Field),
-			PathTemplate: `{{ jp "{.metadata.name}" . }}`,
+			PathTemplate: `{{ .metadata.name }}`,
 		},
 		{
 			Name:         "Namespace",
 			Type:         "string",
 			Format:       "",
 			Priority:     int32(v1alpha1.Field),
-			PathTemplate: `{{ jp "{.metadata.namespace}" . }}`,
+			PathTemplate: `{{ .metadata.namespace }}`,
 		},
 		{
 			Name:         "Labels",
 			Type:         "object",
 			Format:       "",
 			Priority:     int32(v1alpha1.Field),
-			PathTemplate: `{{ jp "{.metadata.labels}" . }}`,
+			PathTemplate: `{{ .metadata.labels | toRawJson }}`,
 		},
 		{
 			Name:         "Annotations",
 			Type:         "object",
 			Format:       "",
 			Priority:     int32(v1alpha1.Field),
-			PathTemplate: `{{ jp "{.metadata.annotations}" . }}`,
+			PathTemplate: `{{ .metadata.annotations | toRawJson }}`,
 		},
 		{
 			Name:         "Age",
 			Type:         "date",
 			Format:       "",
 			Priority:     int32(v1alpha1.Field),
-			PathTemplate: `{{ jp "{.metadata.creationTimestamp}" . }}`,
+			PathTemplate: `{{ .metadata.creationTimestamp }}`,
 		},
 		/*
 			{

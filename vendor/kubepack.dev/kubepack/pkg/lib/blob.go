@@ -28,7 +28,7 @@ const GoogleApplicationCredentials = "/personal/AppsCode/credentials/bytebuilder
 type BlobStore struct {
 	Host   string
 	Bucket string
-	*blobfs.BlobFS
+	blobfs.Interface
 }
 
 func NewTestBlobStore() (*BlobStore, error) {
@@ -37,8 +37,8 @@ func NewTestBlobStore() (*BlobStore, error) {
 		return nil, err
 	}
 	return &BlobStore{
-		BlobFS: fs,
-		Host:   apis.YAMLHost,
-		Bucket: apis.YAMLBucket,
+		Interface: fs,
+		Host:      apis.YAMLHost,
+		Bucket:    apis.YAMLBucket,
 	}, nil
 }

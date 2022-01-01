@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/dynamic"
 	cc "kmodules.xyz/client-go/client"
 	"kmodules.xyz/client-go/discovery"
 	"kubepack.dev/lib-helm/pkg/engine"
@@ -40,7 +39,6 @@ type ModuleReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 
-	DC           dynamic.Interface
 	ClientGetter genericclioptions.RESTClientGetter
 	Mapper       discovery.ResourceMapper
 
@@ -84,7 +82,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	matchers := map[schema.GroupVersionKind][]pkgapi.Matcher{}
 	for _, action := range module.Spec.Actions {
 		runner := executor.ActionExecutor{
-			DC:            r.DC,
+			Client:        r.Client,
 			ClientGetter:  r.ClientGetter,
 			Mapper:        r.Mapper,
 			ModuleName:    module.Name,
@@ -114,14 +112,16 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				Namespace: req.Namespace,
 			},
 		}
-		_, _, err := cc.CreateOrPatch(ctx, r.Client, objKey, func(in client.Object) client.Object {
+		_, _, err := cc.CreateOrPatch(r.Client, objKey, func(in client.Object, createOp bool) client.Object {
 			i := in.(*pkgapi.ModuleExecStatus)
-			ctrler := metav1.NewControllerRef(&module, pkgapi.GroupVersion.WithKind("Module"))
-			i.OwnerReferences = []metav1.OwnerReference{
-				*ctrler,
+			if createOp {
+				ctrler := metav1.NewControllerRef(&module, pkgapi.GroupVersion.WithKind("Module"))
+				i.OwnerReferences = []metav1.OwnerReference{
+					*ctrler,
+				}
 			}
 			return i
-		}, metav1.PatchOptions{})
+		})
 		if err != nil {
 			log.Error(err, "failed to create/patch ModuleExecStatus")
 		}

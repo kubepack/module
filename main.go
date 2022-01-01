@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/homedir"
@@ -126,7 +125,6 @@ func main() {
 	if err = (&pkgcontrollers.ModuleReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
-		DC:            dynamic.NewForConfigOrDie(config),
 		ClientGetter:  getter,
 		Mapper:        discovery.NewResourceMapper(mgr.GetRESTMapper()),
 		ChartRegistry: lib.DefaultRegistry,
