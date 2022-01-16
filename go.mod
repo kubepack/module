@@ -13,11 +13,11 @@ require (
 	k8s.io/cli-runtime v0.21.1
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.9.0
-	kmodules.xyz/client-go v0.0.0-20211231190151-a89b45cbdb3b
-	kmodules.xyz/resource-metadata v0.7.1-0.20211229020403-f8778a87b568
-	kmodules.xyz/sets v0.0.0-20211223043606-9d9b263bcc95
-	kubeops.dev/ui-server v0.0.0-20211229085933-d588aa71cb0f
-	kubepack.dev/kubepack v0.3.9-0.20220101214521-d8c848aa5506
+	kmodules.xyz/client-go v0.0.0-20220113110622-dbc40d36b6f8
+	kmodules.xyz/resource-metadata v0.8.2-0.20220116072424-4ed4f0c4b8b5
+	kmodules.xyz/sets v0.0.0-20220102205946-ac2b95a10ab2
+	kubeops.dev/ui-server v0.0.2-0.20220116075504-7ca6660310df
+	kubepack.dev/kubepack v0.3.9-0.20220109035635-7fbe6a82d21a
 	kubepack.dev/lib-helm v0.3.2-0.20211223113921-d8cbb538a0e3
 	sigs.k8s.io/cli-utils v0.26.1
 	sigs.k8s.io/controller-runtime v0.9.0
@@ -140,7 +140,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351 // indirect
 	github.com/russross/blackfriday v1.5.3-0.20190124082335-a477dd164691 // indirect
-	github.com/sergi/go-diff v1.1.0 // indirect
+	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -154,22 +154,22 @@ require (
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	go.opencensus.io v0.22.5 // indirect
-	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
+	go.starlark.net v0.0.0-20200821142938-949cc6f4b097 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.0 // indirect
 	gocloud.dev v0.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449 // indirect
-	golang.org/x/net v0.0.0-20210505024714-0287a6fb4125 // indirect
+	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/oauth2 v0.0.0-20201203001011-0b49973bad19 // indirect
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
-	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
-	golang.org/x/tools v0.1.0 // indirect
+	golang.org/x/tools v0.1.8 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gomodules.xyz/blobfs v0.1.10 // indirect
 	gomodules.xyz/encoding v0.0.2 // indirect
@@ -198,7 +198,7 @@ require (
 	kmodules.xyz/apiversion v0.2.0 // indirect
 	kmodules.xyz/apply v0.0.0-20210503080849-eb226c295465 // indirect
 	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61 // indirect
-	kmodules.xyz/resource-metrics v0.0.6 // indirect
+	kmodules.xyz/resource-metrics v0.0.7-0.20220113235224-64b74ecbc4f8 // indirect
 	sigs.k8s.io/application v0.8.2-0.20200306235134-f10d9ca8abd4 // indirect
 	sigs.k8s.io/kustomize/api v0.8.8 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect

@@ -130,7 +130,7 @@ func (finder ObjectFinder) ListConnectedPartials(src *unstructured.Unstructured,
 	return result, nil
 }
 
-func (finder ObjectFinder) ListConnectedObjectIDs(src *unstructured.Unstructured, connections []v1alpha1.ResourceConnection) (map[v1alpha1.EdgeLabel]ksets.OID, error) {
+func (finder ObjectFinder) ListConnectedObjectIDs(src *unstructured.Unstructured, connections []v1alpha1.ResourceConnection) (map[apiv1.EdgeLabel]ksets.OID, error) {
 	type GKL struct {
 		Group  string
 		Kind   string
@@ -153,7 +153,7 @@ func (finder ObjectFinder) ListConnectedObjectIDs(src *unstructured.Unstructured
 		connsPerGKL[gkl] = append(connsPerGKL[gkl], c)
 	}
 
-	edges := map[v1alpha1.EdgeLabel]ksets.OID{}
+	edges := map[apiv1.EdgeLabel]ksets.OID{}
 	for _, conns := range connsPerGKL {
 		if len(conns) > 1 {
 			sort.Slice(conns, func(i, j int) bool {
@@ -728,7 +728,11 @@ func (finder ObjectFinder) findChildren(e *Edge, src *unstructured.Unstructured)
 }
 
 func (finder ObjectFinder) isNamespaced(gvk schema.GroupVersionKind) (bool, error) {
-	mapping, err := finder.Client.RESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	var versions []string
+	if gvk.Version != "" {
+		versions = append(versions, gvk.Version)
+	}
+	mapping, err := finder.Client.RESTMapper().RESTMapping(gvk.GroupKind(), versions...)
 	if err != nil {
 		return false, err
 	}

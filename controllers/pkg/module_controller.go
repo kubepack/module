@@ -112,7 +112,7 @@ func (r *ModuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				Namespace: req.Namespace,
 			},
 		}
-		_, _, err := cc.CreateOrPatch(r.Client, objKey, func(in client.Object, createOp bool) client.Object {
+		_, _, err := cc.CreateOrPatch(context.TODO(), r.Client, objKey, func(in client.Object, createOp bool) client.Object {
 			i := in.(*pkgapi.ModuleExecStatus)
 			if createOp {
 				ctrler := metav1.NewControllerRef(&module, pkgapi.GroupVersion.WithKind("Module"))

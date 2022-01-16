@@ -592,7 +592,7 @@ github.com/rubenv/sql-migrate/sqlparse
 # github.com/russross/blackfriday v1.5.3-0.20190124082335-a477dd164691
 ## explicit
 github.com/russross/blackfriday
-# github.com/sergi/go-diff v1.1.0
+# github.com/sergi/go-diff v1.2.0
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/shopspring/decimal v1.2.0
@@ -654,7 +654,7 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
-# go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5
+# go.starlark.net v0.0.0-20200821142938-949cc6f4b097
 ## explicit; go 1.13
 go.starlark.net/internal/compile
 go.starlark.net/internal/spell
@@ -714,11 +714,12 @@ golang.org/x/crypto/scrypt
 ## explicit; go 1.11
 golang.org/x/lint
 golang.org/x/lint/golint
-# golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449
-## explicit; go 1.12
+# golang.org/x/mod v0.5.1
+## explicit; go 1.17
+golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20210505024714-0287a6fb4125
+# golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -742,11 +743,11 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+# golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
+# golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
 ## explicit; go 1.17
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
@@ -757,8 +758,8 @@ golang.org/x/sys/windows/registry
 # golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 ## explicit; go 1.11
 golang.org/x/term
-# golang.org/x/text v0.3.6
-## explicit; go 1.11
+# golang.org/x/text v0.3.7
+## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -783,8 +784,8 @@ golang.org/x/text/width
 # golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 ## explicit
 golang.org/x/time/rate
-# golang.org/x/tools v0.1.0
-## explicit; go 1.12
+# golang.org/x/tools v0.1.8
+## explicit; go 1.17
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/analysis
 golang.org/x/tools/go/analysis/passes/inspect
@@ -810,6 +811,7 @@ golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/lsp/fuzzy
 golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 ## explicit; go 1.11
@@ -1352,34 +1354,39 @@ kmodules.xyz/apiversion
 # kmodules.xyz/apply v0.0.0-20210503080849-eb226c295465
 ## explicit; go 1.15
 kmodules.xyz/apply
-# kmodules.xyz/client-go v0.0.0-20211231190151-a89b45cbdb3b
+# kmodules.xyz/client-go v0.0.0-20220113110622-dbc40d36b6f8
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/api/v1
 kmodules.xyz/client-go/apiextensions
 kmodules.xyz/client-go/apiextensions/v1
-kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/client
+kmodules.xyz/client-go/client/apiutil
 kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/pointer
 kmodules.xyz/client-go/tools/clientcmd
+kmodules.xyz/client-go/tools/clusterid
 kmodules.xyz/client-go/tools/parser
 kmodules.xyz/client-go/tools/wait
 # kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61
 ## explicit; go 1.15
 kmodules.xyz/offshoot-api/api/v1
-# kmodules.xyz/resource-metadata v0.7.1-0.20211229020403-f8778a87b568
+# kmodules.xyz/resource-metadata v0.8.2-0.20220116072424-4ed4f0c4b8b5
 ## explicit; go 1.17
 kmodules.xyz/resource-metadata/apis/meta
 kmodules.xyz/resource-metadata/apis/meta/v1alpha1
 kmodules.xyz/resource-metadata/crds
 kmodules.xyz/resource-metadata/hub
+kmodules.xyz/resource-metadata/hub/resourceblockdefinitions
 kmodules.xyz/resource-metadata/hub/resourceclasses
 kmodules.xyz/resource-metadata/hub/resourcedescriptors
+kmodules.xyz/resource-metadata/hub/resourceoutlines
+kmodules.xyz/resource-metadata/hub/resourcetabledefinitions
+kmodules.xyz/resource-metadata/pkg/layouts
 kmodules.xyz/resource-metadata/pkg/tableconvertor
 kmodules.xyz/resource-metadata/pkg/tableconvertor/printers
-# kmodules.xyz/resource-metrics v0.0.6
+# kmodules.xyz/resource-metrics v0.0.7-0.20220113235224-64b74ecbc4f8
 ## explicit; go 1.17
 kmodules.xyz/resource-metrics
 kmodules.xyz/resource-metrics/api
@@ -1388,13 +1395,13 @@ kmodules.xyz/resource-metrics/batch/v1
 kmodules.xyz/resource-metrics/batch/v1beta1
 kmodules.xyz/resource-metrics/core/v1
 kmodules.xyz/resource-metrics/kubedb.com/v1alpha2
-# kmodules.xyz/sets v0.0.0-20211223043606-9d9b263bcc95
+# kmodules.xyz/sets v0.0.0-20220102205946-ac2b95a10ab2
 ## explicit; go 1.17
 kmodules.xyz/sets
-# kubeops.dev/ui-server v0.0.0-20211229085933-d588aa71cb0f
+# kubeops.dev/ui-server v0.0.2-0.20220116075504-7ca6660310df
 ## explicit; go 1.17
 kubeops.dev/ui-server/pkg/graph
-# kubepack.dev/kubepack v0.3.9-0.20220101214521-d8c848aa5506
+# kubepack.dev/kubepack v0.3.9-0.20220109035635-7fbe6a82d21a
 ## explicit; go 1.17
 kubepack.dev/kubepack/apis
 kubepack.dev/kubepack/apis/kubepack

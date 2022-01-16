@@ -22,12 +22,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 
 	"kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
 	"kmodules.xyz/resource-metadata/hub"
-	"kmodules.xyz/resource-metadata/pkg/tableconvertor/printers"
 
+	"github.com/pkg/errors"
 	"gomodules.xyz/encoding/json"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,6 +42,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var pool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
+
 type TableConvertor interface {
 	ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*v1alpha1.Table, error)
 }
@@ -50,7 +57,14 @@ type TableConvertor interface {
 func New(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (TableConvertor, error) {
 	c := &convertor{
 		fieldPath: fieldPath,
-		buf:       &bytes.Buffer{},
+	}
+	err := c.init(columns)
+	return c, err
+}
+
+func NewForList(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (TableConvertor, error) {
+	c := &convertor{
+		fieldPath: fieldPath,
 	}
 	err := c.init(filterColumns(columns, v1alpha1.List))
 	return c, err
@@ -62,15 +76,12 @@ func NewForGVR(r *hub.Registry, kc client.Client, gvr schema.GroupVersionResourc
 		return nil, err
 	}
 
-	c := &convertor{
-		buf: &bytes.Buffer{},
-	}
-	err = c.init(filterColumnsWithDefaults(kc, gvr, rd.Spec.Columns, priority))
+	c := &convertor{}
+	err = c.init(FilterColumnsWithDefaults(kc, gvr, rd.Spec.Columns, priority))
 	return c, err
 }
 
 type convertor struct {
-	buf       *bytes.Buffer
 	fieldPath string
 	headers   []v1alpha1.ResourceColumnDefinition
 }
@@ -78,7 +89,8 @@ type convertor struct {
 func filterColumns(columns []v1alpha1.ResourceColumnDefinition, priority v1alpha1.Priority) []v1alpha1.ResourceColumnDefinition {
 	out := make([]v1alpha1.ResourceColumnDefinition, 0, len(columns))
 	for _, col := range columns {
-		if (col.Priority&int32(priority)) == int32(priority) ||
+		if (col.Priority&int32(v1alpha1.Metadata)) == int32(v1alpha1.Metadata) ||
+			(col.Priority&int32(priority)) == int32(priority) ||
 			(priority == v1alpha1.List && col.Priority == 0) {
 			out = append(out, col)
 		}
@@ -86,7 +98,13 @@ func filterColumns(columns []v1alpha1.ResourceColumnDefinition, priority v1alpha
 	return out
 }
 
-func filterColumnsWithDefaults(kc client.Client, gvr schema.GroupVersionResource, columns []v1alpha1.ResourceColumnDefinition, priority v1alpha1.Priority) []v1alpha1.ResourceColumnDefinition {
+func FilterColumnsWithDefaults(
+	kc client.Client,
+	gvr schema.GroupVersionResource,
+	columns []v1alpha1.ResourceColumnDefinition,
+	priority v1alpha1.Priority,
+) []v1alpha1.ResourceColumnDefinition {
+
 	// columns are specified in resource description, so use those.
 	out := filterColumns(columns, priority)
 	if len(out) > 0 {
@@ -96,9 +114,9 @@ func filterColumnsWithDefaults(kc client.Client, gvr schema.GroupVersionResource
 	// generate column list by merging default columns + crd additional columns
 	var defaultColumns []v1alpha1.ResourceColumnDefinition
 	if priority == v1alpha1.List {
-		defaultColumns = defaultListColumns()
+		defaultColumns = DefaultListColumns()
 	} else {
-		defaultColumns = defaultDetailsColumns()
+		defaultColumns = DefaultDetailsColumns()
 	}
 	defaultJsonPaths := sets.NewString()
 	for _, col := range defaultColumns {
@@ -138,87 +156,121 @@ func filterColumnsWithDefaults(kc client.Client, gvr schema.GroupVersionResource
 }
 
 func (c *convertor) init(columns []v1alpha1.ResourceColumnDefinition) error {
-	for _, col := range columns {
-
-		//desc := fmt.Sprintf("Custom resource definition column (in JSONPath format): %s", col.JSONPath)
-		//if len(col.Description) > 0 {
-		//	desc = col.Description
-		//}
-
-		c.headers = append(c.headers, v1alpha1.ResourceColumnDefinition{
-			Name:         col.Name,
-			Type:         col.Type,
-			Format:       col.Format,
-			Description:  col.Description,
-			Priority:     col.Priority,
-			PathTemplate: col.PathTemplate,
-		})
-	}
+	c.headers = append(c.headers, columns...)
 	return nil
 }
 
-func (c *convertor) rowFn(data interface{}) ([]interface{}, error) {
-	knownCells := map[string]interface{}{}
-
-	if obj, ok := data.(runtime.Unstructured); ok {
-		var err error
-		knownCells, err = printers.Convert(obj)
-		if err != nil {
-			return nil, err
-		}
-		data = obj.UnstructuredContent()
+func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
+	data := obj
+	if o, ok := obj.(runtime.Unstructured); ok {
+		data = o.UnstructuredContent()
 	}
 
-	cells := make([]interface{}, 0, len(c.headers))
+	buf := pool.Get().(*bytes.Buffer)
+	defer pool.Put(buf)
+
+	cells := make([]v1alpha1.TableCell, 0, len(c.headers))
 	for _, col := range c.headers {
-		if v, ok := knownCells[col.Name]; ok {
-			cells = append(cells, v)
-			continue
+
+		var cell v1alpha1.TableCell
+		{
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     col.Type,
+				Template: col.PathTemplate,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Data = v
+			}
+		}
+		if col.Sort != nil && col.Sort.Enable && col.Sort.Template != "" {
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     col.Sort.Type,
+				Template: col.Sort.Template,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Sort = v
+			}
+		}
+		if col.Link != nil && col.Link.Enable && col.Link.Template != "" {
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     "string",
+				Template: col.Link.Template,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Link = v.(string)
+			}
+		}
+		if col.Icon != nil && col.Icon.Enable && col.Icon.Template != "" {
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     "string",
+				Template: col.Link.Template,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Icon = v.(string)
+			}
+		}
+		if col.Color != nil && col.Color.Template != "" {
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     "string",
+				Template: col.Link.Template,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Color = v.(string)
+			}
 		}
 
-		if col.PathTemplate == "" {
-			cells = append(cells, nil)
-			continue
-		}
-
-		tpl, err := template.New("").Funcs(templateFns).Parse(col.PathTemplate)
-		if err != nil {
-			klog.Infof("Failed to parse. Reason: %v", err)
-			return nil, fmt.Errorf("invalid column definition %q", col.PathTemplate)
-		}
-		// Do nothing and continue execution.
-		// If printed, the result of the index operation is the string "<no value>".
-		// We mitigate that later.
-		tpl.Option("missingkey=default")
-		err = tpl.Execute(c.buf, data)
-		if err != nil {
-			klog.Infof("Failed to resolve template. Reason: %v", err)
-			return nil, fmt.Errorf("invalid column definition %q", col.PathTemplate)
-		}
-		v, err := cellForJSONValue(col.Name, col.Type, strings.ReplaceAll(c.buf.String(), "<no value>", ""))
-		if err != nil {
-			return nil, err
-		}
-		cells = append(cells, v)
-		c.buf.Reset()
+		cells = append(cells, cell)
 	}
 	return cells, nil
 }
 
-func (c *convertor) ConvertToTable(ctx context.Context, obj runtime.Object, tableOptions runtime.Object) (*v1alpha1.Table, error) {
+type columnOptions struct {
+	Name     string
+	Type     string
+	Template string
+}
+
+func renderTemplate(data interface{}, col columnOptions, buf *bytes.Buffer) (interface{}, error) {
+	if col.Template == "" {
+		return nil, nil
+	}
+
+	tpl, err := template.New("").Funcs(templateFns).Parse(col.Template)
+	if err != nil {
+		klog.ErrorS(err, "failed to parse column template", "name", col.Name, "template", col.Template)
+		return nil, errors.Wrapf(err, "falied to parse column %+v", col)
+	}
+	// Do nothing and continue execution.
+	// If printed, the result of the index operation is the string "<no value>".
+	// We mitigate that later.
+	tpl.Option("missingkey=default")
+	buf.Reset()
+	err = tpl.Execute(buf, data)
+	if err != nil {
+		klog.ErrorS(err, "failed to render column template", "name", col.Name, "template", col.Template)
+		return nil, errors.Wrapf(err, "falied to render column %+v", col)
+	}
+	return cellForJSONValue(col, strings.ReplaceAll(buf.String(), "<no value>", ""))
+}
+
+func (c *convertor) ConvertToTable(_ context.Context, obj runtime.Object, _ runtime.Object) (*v1alpha1.Table, error) {
 	table := &v1alpha1.Table{
-		ColumnDefinitions: make([]v1alpha1.ResourceColumnDefinition, 0, len(c.headers)),
+		Columns: make([]v1alpha1.ResourceColumn, 0, len(c.headers)),
+		Rows:    make([]v1alpha1.TableRow, 0),
 	}
 
 	for _, def := range c.headers {
-		table.ColumnDefinitions = append(table.ColumnDefinitions, v1alpha1.ResourceColumnDefinition{
-			Name:         def.Name,
-			Type:         def.Type,
-			Format:       def.Format,
-			Description:  "", //skip
-			Priority:     0,  // skip
-			PathTemplate: "", // skip
-		})
+		table.Columns = append(table.Columns, v1alpha1.Convert_ResourceColumnDefinition_To_ResourceColumn(def))
 	}
 
 	if m, err := meta.ListAccessor(obj); err == nil {
@@ -231,30 +283,7 @@ func (c *convertor) ConvertToTable(ctx context.Context, obj runtime.Object, tabl
 	}
 
 	var err error
-
-	if c.fieldPath == "" {
-		table.Rows, err = metaToTableRow(obj, c.rowFn)
-	} else {
-		arr, ok, err := unstructured.NestedSlice(obj.(runtime.Unstructured).UnstructuredContent(), fields(c.fieldPath)...)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return table, nil
-		}
-
-		rows := make([]v1alpha1.TableRow, 0, len(arr))
-		for _, item := range arr {
-			var row v1alpha1.TableRow
-			row.Cells, err = c.rowFn(item)
-			if err != nil {
-				return nil, err
-			}
-			rows = append(rows, row)
-		}
-		table.Rows = rows
-	}
-
+	table.Rows, err = metaToTableRow(obj, c.fieldPath, c.rowFn)
 	return table, err
 }
 
@@ -262,9 +291,9 @@ func fields(path string) []string {
 	return strings.Split(strings.Trim(path, "."), ".")
 }
 
-func cellForJSONValue(colName, headerType string, value string) (interface{}, error) {
+func cellForJSONValue(col columnOptions, value string) (interface{}, error) {
 	value = strings.TrimSpace(value)
-	switch headerType {
+	switch col.Type {
 	case "integer":
 		if value == "" {
 			return UnknownValue, nil
@@ -308,20 +337,20 @@ func cellForJSONValue(colName, headerType string, value string) (interface{}, er
 		var obj interface{}
 		err := json.Unmarshal([]byte(value), &obj)
 		if err != nil {
-			return nil, fmt.Errorf("col %s, type %s, err %v, value %s", colName, headerType, err.Error(), value)
+			return nil, fmt.Errorf("col %s, type %s, err %v, value %s", col.Name, col.Type, err.Error(), value)
 		}
 		return obj, nil
 	}
-	return nil, fmt.Errorf("unknown type %s in header %s with value %s", headerType, colName, value)
+	return nil, fmt.Errorf("unknown type %s in header %s with value %s", col.Type, col.Name, value)
 }
 
 // metaToTableRow converts a list or object into one or more table rows. The provided rowFn is invoked for
 // each accessed item, with name and age being passed to each.
-func metaToTableRow(obj runtime.Object, rowFn func(obj interface{}) ([]interface{}, error)) ([]v1alpha1.TableRow, error) {
+func metaToTableRow(obj runtime.Object, fieldPath string, rowFn func(obj interface{}) ([]v1alpha1.TableCell, error)) ([]v1alpha1.TableRow, error) {
 	if meta.IsListType(obj) {
 		rows := make([]v1alpha1.TableRow, 0, 16)
 		err := meta.EachListItem(obj, func(obj runtime.Object) error {
-			nestedRows, err := metaToTableRow(obj, rowFn)
+			nestedRows, err := metaToTableRow(obj, fieldPath, rowFn)
 			if err != nil {
 				return err
 			}
@@ -334,18 +363,40 @@ func metaToTableRow(obj runtime.Object, rowFn func(obj interface{}) ([]interface
 		return rows, nil
 	}
 
-	rows := make([]v1alpha1.TableRow, 0, 1)
-	var row v1alpha1.TableRow
-	var err error
-	row.Cells, err = rowFn(obj)
+	if fieldPath == "" {
+		// obj to row
+		cells, err := rowFn(obj)
+		if err != nil {
+			return nil, err
+		}
+		return []v1alpha1.TableRow{
+			{
+				Cells: cells,
+			},
+		}, nil
+	}
+
+	// subtable
+	arr, ok, err := unstructured.NestedSlice(obj.(runtime.Unstructured).UnstructuredContent(), fields(fieldPath)...)
 	if err != nil {
 		return nil, err
 	}
-	rows = append(rows, row)
+	if !ok {
+		return nil, nil
+	}
+	rows := make([]v1alpha1.TableRow, 0, len(arr))
+	for _, item := range arr {
+		var row v1alpha1.TableRow
+		row.Cells, err = rowFn(item)
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, row)
+	}
 	return rows, nil
 }
 
-func defaultListColumns() []v1alpha1.ResourceColumnDefinition {
+func DefaultListColumns() []v1alpha1.ResourceColumnDefinition {
 	return []v1alpha1.ResourceColumnDefinition{
 		{
 			Name:         "Name",
@@ -353,6 +404,17 @@ func defaultListColumns() []v1alpha1.ResourceColumnDefinition {
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
 			PathTemplate: `{{ .metadata.name }}`,
+			Sort: &v1alpha1.SortDefinition{
+				Enable: true,
+				// Template: "",
+			},
+			Link: &v1alpha1.AttributeDefinition{
+				Enable: true,
+				// Template: "",
+			},
+			//Shape ShapeProperty `json:"shape,omitempty"`
+			//Icon  bool          `json:"icon,omitempty"`
+			//Color ColorProperty `json:"color,omitempty"`
 		},
 		{
 			Name:         "Namespace",
@@ -381,46 +443,67 @@ func defaultListColumns() []v1alpha1.ResourceColumnDefinition {
 			Format:       "",
 			Priority:     int32(v1alpha1.List),
 			PathTemplate: `{{ .metadata.creationTimestamp }}`,
+			Sort: &v1alpha1.SortDefinition{
+				Enable:   true,
+				Template: `{{ .metadata.creationTimestamp | toDate "2006-01-02T15:04:05Z07:00" | unixEpoch }}`,
+				Type:     "integer",
+			},
 		},
 	}
 }
 
-func defaultDetailsColumns() []v1alpha1.ResourceColumnDefinition {
+func DefaultDetailsColumns() []v1alpha1.ResourceColumnDefinition {
 	return []v1alpha1.ResourceColumnDefinition{
 		{
 			Name:         "Name",
 			Type:         "string",
 			Format:       "",
-			Priority:     int32(v1alpha1.Field),
+			Priority:     int32(v1alpha1.Field | v1alpha1.List),
 			PathTemplate: `{{ .metadata.name }}`,
+			Sort: &v1alpha1.SortDefinition{
+				Enable: true,
+				// Template: "",
+			},
+			Link: &v1alpha1.AttributeDefinition{
+				Enable: true,
+				// Template: "",
+			},
+			//Shape ShapeProperty `json:"shape,omitempty"`
+			//Icon  bool          `json:"icon,omitempty"`
+			//Color ColorProperty `json:"color,omitempty"`
 		},
 		{
 			Name:         "Namespace",
 			Type:         "string",
 			Format:       "",
-			Priority:     int32(v1alpha1.Field),
+			Priority:     int32(v1alpha1.Field | v1alpha1.List),
 			PathTemplate: `{{ .metadata.namespace }}`,
 		},
 		{
 			Name:         "Labels",
 			Type:         "object",
 			Format:       "",
-			Priority:     int32(v1alpha1.Field),
+			Priority:     int32(v1alpha1.Field | v1alpha1.List),
 			PathTemplate: `{{ .metadata.labels | toRawJson }}`,
 		},
 		{
 			Name:         "Annotations",
 			Type:         "object",
 			Format:       "",
-			Priority:     int32(v1alpha1.Field),
+			Priority:     int32(v1alpha1.Field | v1alpha1.List),
 			PathTemplate: `{{ .metadata.annotations | toRawJson }}`,
 		},
 		{
 			Name:         "Age",
 			Type:         "date",
 			Format:       "",
-			Priority:     int32(v1alpha1.Field),
+			Priority:     int32(v1alpha1.Field | v1alpha1.List),
 			PathTemplate: `{{ .metadata.creationTimestamp }}`,
+			Sort: &v1alpha1.SortDefinition{
+				Enable:   true,
+				Template: `{{ .metadata.creationTimestamp | toDate "2006-01-02T15:04:05Z07:00" | unixEpoch }}`,
+				Type:     "integer",
+			},
 		},
 		/*
 			{
