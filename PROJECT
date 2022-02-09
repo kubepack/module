@@ -1,4 +1,4 @@
-domain: kubepack.com
+domain: x-helm.dev
 layout:
 - go.kubebuilder.io/v3
 multigroup: true
@@ -9,7 +9,7 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: kubepack.com
+  domain: x-helm.dev
   group: pkg
   kind: Module
   path: kubepack.dev/module/apis/pkg/v1alpha1
@@ -17,7 +17,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  domain: kubepack.com
+  domain: x-helm.dev
   group: pkg
   kind: ModuleExecStatus
   path: kubepack.dev/module/apis/pkg/v1alpha1

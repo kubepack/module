@@ -5,7 +5,7 @@ metadata:
   name: moduleexecstatus-editor-role
 rules:
 - apiGroups:
-  - pkg.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - moduleexecstatuses
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pkg.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - moduleexecstatuses/status
   verbs:

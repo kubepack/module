@@ -7,7 +7,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - pkgapi.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - modules
   verbs:
@@ -19,13 +19,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pkgapi.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - modules/finalizers
   verbs:
   - update
 - apiGroups:
-  - pkgapi.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - modules/status
   verbs:

@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: dd6129b1.kubepack.com
+  resourceName: dd6129b1.x-helm.dev

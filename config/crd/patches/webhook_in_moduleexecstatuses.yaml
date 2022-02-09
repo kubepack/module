@@ -2,7 +2,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: moduleexecstatuses.pkg.kubepack.com
+  name: moduleexecstatuses.pkg.x-helm.dev
 spec:
   conversion:
     strategy: Webhook

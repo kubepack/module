@@ -5,7 +5,7 @@ metadata:
   name: moduleexecstatus-viewer-role
 rules:
 - apiGroups:
-  - pkg.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - moduleexecstatuses
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - pkg.kubepack.com
+  - pkg.x-helm.dev
   resources:
   - moduleexecstatuses/status
   verbs:

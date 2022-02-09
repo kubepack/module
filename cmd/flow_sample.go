@@ -8,7 +8,7 @@ import (
 
 var myflow = &pkgapi.Module{
 	TypeMeta: metav1.TypeMeta{
-		APIVersion: "pkg.kubepack.com/v1alpha1",
+		APIVersion: "pkg.x-helm.dev/v1alpha1",
 		Kind:       "Module",
 	},
 	ObjectMeta: metav1.ObjectMeta{

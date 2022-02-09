@@ -1,4 +1,4 @@
-apiVersion: pkg.kubepack.com/v1alpha1
+apiVersion: pkg.x-helm.dev/v1alpha1
 kind: Module
 metadata:
   name: module-sample

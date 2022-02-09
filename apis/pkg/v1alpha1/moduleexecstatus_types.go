@@ -31,8 +31,8 @@ type ModuleExecStatusStatus struct {
 }
 
 type Watcher struct {
-	Kind     GroupVersionKind `json:"kind"`
-	Matchers []Matcher        `json:"matchers"`
+	Kind     metav1.GroupVersionKind `json:"kind"`
+	Matchers []Matcher               `json:"matchers"`
 }
 
 //+kubebuilder:object:root=true

@@ -9,13 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type GroupVersionKind struct {
-	// +optional
-	Group   string `json:"group"`
-	Version string `json:"version"`
-	Kind    string `json:"kind"`
-}
-
 type Matcher struct {
 	// +optional
 	Name string `json:"name,omitempty"`

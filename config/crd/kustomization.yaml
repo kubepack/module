@@ -2,8 +2,8 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/pkg.kubepack.com_modules.yaml
-- bases/pkg.kubepack.com_moduleexecstatuses.yaml
+- bases/pkg.x-helm.dev_modules.yaml
+- bases/pkg.x-helm.dev_moduleexecstatuses.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

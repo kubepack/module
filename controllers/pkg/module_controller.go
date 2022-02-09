@@ -50,9 +50,9 @@ type ModuleReconciler struct {
 	Watchers *watchers.ModuleWatchers
 }
 
-//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=pkgapi.kubepack.com,resources=modules/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pkg.x-helm.dev,resources=modules,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pkg.x-helm.dev,resources=modules/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pkg.x-helm.dev,resources=modules/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

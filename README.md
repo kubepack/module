@@ -4,8 +4,8 @@
 
 ```bash
 make manifests fmt
-kubectl apply -f config/crd/bases/pkg.kubepack.com_modules.yaml
-kubectl apply -f config/crd/bases/pkg.kubepack.com_moduleexecstatuses.yaml
+kubectl apply -f config/crd/bases/pkg.x-helm.dev_modules.yaml
+kubectl apply -f config/crd/bases/pkg.x-helm.dev_moduleexecstatuses.yaml
 
 make run
 

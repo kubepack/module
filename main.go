@@ -115,7 +115,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "dd6129b1.kubepack.com",
+		LeaderElectionID:       "dd6129b1.pkg.x-helm.dev",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
