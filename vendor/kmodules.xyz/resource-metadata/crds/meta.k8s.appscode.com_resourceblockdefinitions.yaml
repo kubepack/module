@@ -105,12 +105,8 @@ spec:
                             properties:
                               color:
                                 properties:
-                                  color:
-                                    enum:
-                                    - Foreground
-                                    - Background
-                                    type: string
                                   template:
+                                    description: 'Available color codes: success,danger,neutral,warning,info'
                                     type: string
                                 type: object
                               description:
@@ -126,15 +122,11 @@ spec:
                                 type: string
                               icon:
                                 properties:
-                                  enable:
-                                    type: boolean
                                   template:
                                     type: string
                                 type: object
                               link:
                                 properties:
-                                  enable:
-                                    type: boolean
                                   template:
                                     type: string
                                 type: object
@@ -202,12 +194,9 @@ spec:
                           type: string
                       type: object
                   required:
-                  - actions
-                  - displayMode
                   - kind
                   - query
                   - ref
-                  - view
                   type: object
                 type: array
               resource:
@@ -239,7 +228,6 @@ spec:
                 type: object
             required:
             - blocks
-            - resource
             type: object
         type: object
     served: true

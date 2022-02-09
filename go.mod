@@ -13,16 +13,18 @@ require (
 	k8s.io/cli-runtime v0.21.1
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.9.0
-	kmodules.xyz/client-go v0.0.0-20220113110622-dbc40d36b6f8
-	kmodules.xyz/resource-metadata v0.8.2-0.20220116072424-4ed4f0c4b8b5
+	kmodules.xyz/client-go v0.0.0-20220203031013-1de48437aaf3
+	kmodules.xyz/resource-metadata v0.9.5
 	kmodules.xyz/sets v0.0.0-20220102205946-ac2b95a10ab2
-	kubeops.dev/ui-server v0.0.2-0.20220116075504-7ca6660310df
-	kubepack.dev/kubepack v0.3.9-0.20220109035635-7fbe6a82d21a
-	kubepack.dev/lib-helm v0.3.2-0.20211223113921-d8cbb538a0e3
+	kubeops.dev/ui-server v0.0.0-20220209055252-68b69db87506
+	kubepack.dev/kubepack v0.3.9-0.20220201033352-575b50c5a43d
+	kubepack.dev/lib-helm v0.3.2-0.20220207083916-19ae74825432
 	sigs.k8s.io/cli-utils v0.26.1
 	sigs.k8s.io/controller-runtime v0.9.0
 	sigs.k8s.io/yaml v1.2.0
 )
+
+replace sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.9.1-0.20220112213948-0e7a1aa77c8e
 
 require (
 	cloud.google.com/go v0.72.0 // indirect
@@ -114,7 +116,7 @@ require (
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/mattn/go-runewidth v0.0.7 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
@@ -198,14 +200,13 @@ require (
 	kmodules.xyz/apiversion v0.2.0 // indirect
 	kmodules.xyz/apply v0.0.0-20210503080849-eb226c295465 // indirect
 	kmodules.xyz/offshoot-api v0.0.0-20210829122105-6f4d481b0c61 // indirect
-	kmodules.xyz/resource-metrics v0.0.7-0.20220113235224-64b74ecbc4f8 // indirect
+	kmodules.xyz/resource-metrics v0.0.8 // indirect
+	kubepack.dev/preset v0.0.0-20220207074019-090909e7fcff // indirect
 	sigs.k8s.io/application v0.8.2-0.20200306235134-f10d9ca8abd4 // indirect
 	sigs.k8s.io/kustomize/api v0.8.8 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )
-
-replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.3.0
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d
 
@@ -318,3 +319,5 @@ replace github.com/dgrijalva/jwt-go => github.com/gomodules/jwt v3.2.2+incompati
 replace github.com/golang-jwt/jwt => github.com/golang-jwt/jwt v3.2.2+incompatible
 
 replace github.com/form3tech-oss/jwt-go => github.com/form3tech-oss/jwt-go v3.2.5+incompatible
+
+replace gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.3.0

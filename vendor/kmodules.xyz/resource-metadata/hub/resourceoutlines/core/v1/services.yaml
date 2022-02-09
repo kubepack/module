@@ -11,18 +11,19 @@ metadata:
 spec:
   defaultLayout: true
   pages:
-  - name: Basic
-    blocks:
+  - blocks:
     - actions:
         create: Never
       displayMode: List
       kind: Connection
+      name: Pods
       query:
         byLabel: offshoot
         type: GraphQL
       ref:
         group: ""
         kind: Pod
+    name: Basic
   resource:
     group: ""
     kind: Service

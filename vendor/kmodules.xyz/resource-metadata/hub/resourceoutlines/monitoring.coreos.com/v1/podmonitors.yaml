@@ -11,12 +11,12 @@ metadata:
 spec:
   defaultLayout: true
   pages:
-  - name: Basic
-    blocks:
+  - blocks:
     - actions:
         create: Never
       displayMode: List
       kind: Connection
+      name: Pods
       query:
         byLabel: monitored_by
         type: GraphQL
@@ -27,6 +27,7 @@ spec:
         create: Never
       displayMode: List
       kind: Connection
+      name: Services
       query:
         raw: |-
           query Find($src: String!, $targetGroup: String!, $targetKind: String!) {
@@ -43,18 +44,20 @@ spec:
       ref:
         group: ""
         kind: Service
-  - name: Monitoring
-    blocks:
+    name: Basic
+  - blocks:
     - actions:
         create: Always
       displayMode: List
       kind: Connection
+      name: Prometheus
       query:
         byLabel: monitored_by
         type: GraphQL
       ref:
         group: monitoring.coreos.com
         kind: Prometheus
+    name: Monitoring
   resource:
     group: monitoring.coreos.com
     kind: PodMonitor

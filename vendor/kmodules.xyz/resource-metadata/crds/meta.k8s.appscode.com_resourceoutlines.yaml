@@ -106,12 +106,8 @@ spec:
                           properties:
                             color:
                               properties:
-                                color:
-                                  enum:
-                                  - Foreground
-                                  - Background
-                                  type: string
                                 template:
+                                  description: 'Available color codes: success,danger,neutral,warning,info'
                                   type: string
                               type: object
                             description:
@@ -127,15 +123,11 @@ spec:
                               type: string
                             icon:
                               properties:
-                                enable:
-                                  type: boolean
                                 template:
                                   type: string
                               type: object
                             link:
                               properties:
-                                enable:
-                                  type: boolean
                                 template:
                                   type: string
                               type: object
@@ -201,12 +193,9 @@ spec:
                         type: string
                     type: object
                 required:
-                - actions
-                - displayMode
                 - kind
                 - query
                 - ref
-                - view
                 type: object
               pages:
                 items:
@@ -285,12 +274,8 @@ spec:
                                   properties:
                                     color:
                                       properties:
-                                        color:
-                                          enum:
-                                          - Foreground
-                                          - Background
-                                          type: string
                                         template:
+                                          description: 'Available color codes: success,danger,neutral,warning,info'
                                           type: string
                                       type: object
                                     description:
@@ -307,15 +292,11 @@ spec:
                                       type: string
                                     icon:
                                       properties:
-                                        enable:
-                                          type: boolean
                                         template:
                                           type: string
                                       type: object
                                     link:
                                       properties:
-                                        enable:
-                                          type: boolean
                                         template:
                                           type: string
                                       type: object
@@ -384,12 +365,9 @@ spec:
                                 type: string
                             type: object
                         required:
-                        - actions
-                        - displayMode
                         - kind
                         - query
                         - ref
-                        - view
                         type: object
                       type: array
                     info:
@@ -465,12 +443,8 @@ spec:
                                 properties:
                                   color:
                                     properties:
-                                      color:
-                                        enum:
-                                        - Foreground
-                                        - Background
-                                        type: string
                                       template:
+                                        description: 'Available color codes: success,danger,neutral,warning,info'
                                         type: string
                                     type: object
                                   description:
@@ -487,15 +461,11 @@ spec:
                                     type: string
                                   icon:
                                     properties:
-                                      enable:
-                                        type: boolean
                                       template:
                                         type: string
                                     type: object
                                   link:
                                     properties:
-                                      enable:
-                                        type: boolean
                                       template:
                                         type: string
                                     type: object
@@ -563,12 +533,9 @@ spec:
                               type: string
                           type: object
                       required:
-                      - actions
-                      - displayMode
                       - kind
                       - query
                       - ref
-                      - view
                       type: object
                     insight:
                       properties:
@@ -643,12 +610,8 @@ spec:
                                 properties:
                                   color:
                                     properties:
-                                      color:
-                                        enum:
-                                        - Foreground
-                                        - Background
-                                        type: string
                                       template:
+                                        description: 'Available color codes: success,danger,neutral,warning,info'
                                         type: string
                                     type: object
                                   description:
@@ -665,15 +628,11 @@ spec:
                                     type: string
                                   icon:
                                     properties:
-                                      enable:
-                                        type: boolean
                                       template:
                                         type: string
                                     type: object
                                   link:
                                     properties:
-                                      enable:
-                                        type: boolean
                                       template:
                                         type: string
                                     type: object
@@ -741,12 +700,9 @@ spec:
                               type: string
                           type: object
                       required:
-                      - actions
-                      - displayMode
                       - kind
                       - query
                       - ref
-                      - view
                       type: object
                     name:
                       type: string
@@ -853,12 +809,8 @@ spec:
                           properties:
                             color:
                               properties:
-                                color:
-                                  enum:
-                                  - Foreground
-                                  - Background
-                                  type: string
                                 template:
+                                  description: 'Available color codes: success,danger,neutral,warning,info'
                                   type: string
                               type: object
                             description:
@@ -874,15 +826,11 @@ spec:
                               type: string
                             icon:
                               properties:
-                                enable:
-                                  type: boolean
                                 template:
                                   type: string
                               type: object
                             link:
                               properties:
-                                enable:
-                                  type: boolean
                                 template:
                                   type: string
                               type: object
@@ -948,12 +896,9 @@ spec:
                         type: string
                     type: object
                 required:
-                - actions
-                - displayMode
                 - kind
                 - query
                 - ref
-                - view
                 type: object
               ui:
                 properties:
@@ -969,7 +914,6 @@ spec:
                         type: string
                     required:
                     - name
-                    - url
                     - version
                     type: object
                   instanceLabelPaths:
@@ -990,7 +934,6 @@ spec:
                         type: string
                     required:
                     - name
-                    - url
                     - version
                     type: object
                 type: object

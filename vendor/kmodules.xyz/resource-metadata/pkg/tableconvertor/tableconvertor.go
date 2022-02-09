@@ -26,7 +26,6 @@ import (
 	"text/template"
 
 	"kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
-	"kmodules.xyz/resource-metadata/hub"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/encoding/json"
@@ -67,17 +66,6 @@ func NewForList(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (
 		fieldPath: fieldPath,
 	}
 	err := c.init(filterColumns(columns, v1alpha1.List))
-	return c, err
-}
-
-func NewForGVR(r *hub.Registry, kc client.Client, gvr schema.GroupVersionResource, priority v1alpha1.Priority) (TableConvertor, error) {
-	rd, err := r.LoadByGVR(gvr)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &convertor{}
-	err = c.init(FilterColumnsWithDefaults(kc, gvr, rd.Spec.Columns, priority))
 	return c, err
 }
 
@@ -195,7 +183,7 @@ func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
 				cell.Sort = v
 			}
 		}
-		if col.Link != nil && col.Link.Enable && col.Link.Template != "" {
+		if col.Link != nil && col.Link.Template != "" {
 			if v, err := renderTemplate(data, columnOptions{
 				Name:     col.Name,
 				Type:     "string",
@@ -206,11 +194,11 @@ func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
 				cell.Link = v.(string)
 			}
 		}
-		if col.Icon != nil && col.Icon.Enable && col.Icon.Template != "" {
+		if col.Icon != nil && col.Icon.Template != "" {
 			if v, err := renderTemplate(data, columnOptions{
 				Name:     col.Name,
 				Type:     "string",
-				Template: col.Link.Template,
+				Template: col.Icon.Template,
 			}, buf); err != nil {
 				return nil, err
 			} else {
@@ -221,7 +209,7 @@ func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
 			if v, err := renderTemplate(data, columnOptions{
 				Name:     col.Name,
 				Type:     "string",
-				Template: col.Link.Template,
+				Template: col.Color.Template,
 			}, buf); err != nil {
 				return nil, err
 			} else {
@@ -409,7 +397,6 @@ func DefaultListColumns() []v1alpha1.ResourceColumnDefinition {
 				// Template: "",
 			},
 			Link: &v1alpha1.AttributeDefinition{
-				Enable: true,
 				// Template: "",
 			},
 			//Shape ShapeProperty `json:"shape,omitempty"`
@@ -465,7 +452,6 @@ func DefaultDetailsColumns() []v1alpha1.ResourceColumnDefinition {
 				// Template: "",
 			},
 			Link: &v1alpha1.AttributeDefinition{
-				Enable: true,
 				// Template: "",
 			},
 			//Shape ShapeProperty `json:"shape,omitempty"`

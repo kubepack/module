@@ -9,12 +9,12 @@ metadata:
     k8s.io/version: v1
   name: core-v1-configmaps
 spec:
-  name: Basic
   blocks:
   - actions:
       create: Never
     displayMode: List
     kind: Connection
+    name: Pods
     query:
       byLabel: offshoot
       type: GraphQL

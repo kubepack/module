@@ -9,12 +9,12 @@ metadata:
     k8s.io/version: v1alpha2
   name: kubedb.com-v1alpha2-postgreses
 spec:
-  name: Basic
   blocks:
   - actions:
       create: Never
     displayMode: List
     kind: Connection
+    name: Client Connections
     query:
       byLabel: offshoot
       type: GraphQL
@@ -25,6 +25,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Postgres Version
     query:
       byLabel: offshoot
       type: GraphQL
@@ -35,6 +36,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: StatefulSets
     query:
       byLabel: offshoot
       type: GraphQL
@@ -45,6 +47,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Pods
     query:
       byLabel: offshoot
       type: GraphQL
@@ -55,6 +58,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Services
     query:
       byLabel: exposed_by
       type: GraphQL
@@ -65,6 +69,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Secrets
     query:
       byLabel: offshoot
       type: GraphQL
@@ -75,6 +80,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: PersistentVolumeClaims
     query:
       byLabel: offshoot
       type: GraphQL
@@ -85,6 +91,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Pod Disruption Budgets
     query:
       byLabel: offshoot
       type: GraphQL

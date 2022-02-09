@@ -9,12 +9,12 @@ metadata:
     k8s.io/version: v1alpha2
   name: kubedb.com-v1alpha2-security
 spec:
-  name: Security
   blocks:
   - actions:
       create: Never
     displayMode: List
     kind: Connection
+    name: ServiceAccount
     query:
       byLabel: offshoot
       type: GraphQL
@@ -25,6 +25,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Roles
     query:
       byLabel: offshoot
       type: GraphQL
@@ -35,6 +36,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: RoleBindings
     query:
       byLabel: offshoot
       type: GraphQL
@@ -45,6 +47,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Certificates
     query:
       byLabel: offshoot
       type: GraphQL
@@ -55,6 +58,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Issuer
     query:
       byLabel: offshoot
       type: GraphQL
@@ -65,6 +69,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Cluster Issuer
     query:
       byLabel: offshoot
       type: GraphQL
@@ -75,6 +80,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Pod Security Policies
     query:
       byLabel: offshoot
       type: GraphQL

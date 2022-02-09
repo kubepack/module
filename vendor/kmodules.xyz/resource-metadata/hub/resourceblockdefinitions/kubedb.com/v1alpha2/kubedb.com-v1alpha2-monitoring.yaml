@@ -4,12 +4,12 @@ metadata:
   creationTimestamp: null
   name: kubedb.com-v1alpha2-monitoring
 spec:
-  name: Monitoring
   blocks:
   - actions:
       create: IfEmpty
     displayMode: List
     kind: Connection
+    name: Service Monitors
     query:
       raw: |-
         query Find($src: String!, $targetGroup: String!, $targetKind: String!) {
@@ -30,6 +30,7 @@ spec:
       create: Never
     displayMode: List
     kind: Connection
+    name: Prometheus
     query:
       raw: |-
         query Find($src: String!, $targetGroup: String!, $targetKind: String!) {

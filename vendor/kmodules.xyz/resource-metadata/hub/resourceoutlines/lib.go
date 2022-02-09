@@ -99,12 +99,12 @@ func LoadByName(name string) (*v1alpha1.ResourceOutline, error) {
 	return nil, apierrors.NewNotFound(v1alpha1.Resource(v1alpha1.ResourceKindResourceOutline), name)
 }
 
-func DefaultOutlineForGVK(gvk schema.GroupVersionKind) (*v1alpha1.ResourceOutline, bool) {
+func LoadDefaultByGVK(gvk schema.GroupVersionKind) (*v1alpha1.ResourceOutline, bool) {
 	rv, found := rlPerGK[gvk]
 	return rv, found
 }
 
-func DefaultOutlineForGVR(gvr schema.GroupVersionResource) (*v1alpha1.ResourceOutline, bool) {
+func LoadDefaultByGVR(gvr schema.GroupVersionResource) (*v1alpha1.ResourceOutline, bool) {
 	rv, found := rlPerGR[gvr]
 	return rv, found
 }
@@ -117,5 +117,14 @@ func List() []v1alpha1.ResourceOutline {
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].Name < out[j].Name
 	})
+	return out
+}
+
+func Names() []string {
+	out := make([]string, 0, len(rlMap))
+	for name := range rlMap {
+		out = append(out, name)
+	}
+	sort.Strings(out)
 	return out
 }

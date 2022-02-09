@@ -9,12 +9,12 @@ metadata:
     k8s.io/version: v2beta2
   name: autoscaling-v2beta2-horizontalpodautoscalers
 spec:
-  name: Basic
   blocks:
   - actions:
       create: Never
     displayMode: List
     kind: Connection
+    name: Deployments
     query:
       byLabel: offshoot
       type: GraphQL
