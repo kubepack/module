@@ -43,7 +43,7 @@ import (
 
 	pkgapi "kubepack.dev/module/apis/pkg/v1alpha1"
 	pkgv1alpha1 "kubepack.dev/module/apis/pkg/v1alpha1"
-	pkgcontrollers "kubepack.dev/module/controllers/pkg"
+	pkgcontrollers "kubepack.dev/module/pkg/controllers/pkg"
 	lib2 "kubepack.dev/module/pkg/watchers"
 	//+kubebuilder:scaffold:imports
 )
