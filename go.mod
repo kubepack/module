@@ -4,8 +4,6 @@ go 1.17
 
 require (
 	github.com/go-logr/logr v0.4.0
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.13.0
 	github.com/zeebo/xxh3 v1.0.1
 	gomodules.xyz/sets v0.2.1
 	k8s.io/api v0.21.1
@@ -23,6 +21,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.9.0
 	sigs.k8s.io/yaml v1.2.0
 )
+
+require github.com/onsi/ginkgo v1.16.4 // indirect
 
 replace sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.9.1-0.20220112213948-0e7a1aa77c8e
 
