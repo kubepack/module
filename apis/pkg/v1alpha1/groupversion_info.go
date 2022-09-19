@@ -1,6 +1,6 @@
 // Package v1alpha1 contains API Schema definitions for the pkg v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=pkg.x-helm.dev
+// +kubebuilder:object:generate=true
+// +groupName=pkg.x-helm.dev
 package v1alpha1
 
 import (
