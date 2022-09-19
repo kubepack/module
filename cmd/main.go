@@ -40,7 +40,7 @@ func print_yaml() {
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile("myflow.yaml", data, 0644)
+	err = os.WriteFile("myflow.yaml", data, 0644)
 	if err != nil {
 		panic(err)
 	}
