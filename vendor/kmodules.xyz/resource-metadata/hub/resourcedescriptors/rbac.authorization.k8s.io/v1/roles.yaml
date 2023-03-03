@@ -11,7 +11,7 @@ metadata:
 spec:
   connections:
   - labels:
-    - offshoot
+    - policy
     namespacePath: metadata.namespace
     references:
     - '{range .rules[?(@.resources[*]=="podsecuritypolicies")]}{range @.resourceNames[*]}{@}{"\n"}{end}{end}'
@@ -19,11 +19,6 @@ spec:
       apiVersion: policy/v1beta1
       kind: PodSecurityPolicy
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.png
-    type: image/png
   resource:
     group: rbac.authorization.k8s.io
     kind: Role

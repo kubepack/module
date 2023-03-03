@@ -20,20 +20,23 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"text/template"
 
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
+	"kmodules.xyz/resource-metadata/apis/shared"
+	"kmodules.xyz/resource-metadata/pkg/tableconvertor/lib"
 
 	"github.com/pkg/errors"
 	"gomodules.xyz/encoding/json"
+	jq "gomodules.xyz/encoding/json/query"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metatable "k8s.io/apimachinery/pkg/api/meta/table"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -48,24 +51,24 @@ var pool = sync.Pool{
 }
 
 type TableConvertor interface {
-	ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*v1alpha1.Table, error)
+	ConvertToTable(ctx context.Context, object runtime.Object) (*v1alpha1.Table, error)
 }
 
 // New creates a new table convertor for the provided CRD column definition. If the printer definition cannot be parsed,
 // error will be returned along with a default table convertor.
-func New(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (TableConvertor, error) {
+func New(fieldPath string, columns []v1alpha1.ResourceColumnDefinition, fnDashboard DashboardRendererFunc, fnExec ResourceExecFunc) (TableConvertor, error) {
 	c := &convertor{
 		fieldPath: fieldPath,
 	}
-	err := c.init(columns)
+	err := c.init(columns, fnDashboard, fnExec)
 	return c, err
 }
 
-func NewForList(fieldPath string, columns []v1alpha1.ResourceColumnDefinition) (TableConvertor, error) {
+func NewForList(fieldPath string, columns []v1alpha1.ResourceColumnDefinition, fnDashboard DashboardRendererFunc, fnExec ResourceExecFunc) (TableConvertor, error) {
 	c := &convertor{
 		fieldPath: fieldPath,
 	}
-	err := c.init(filterColumns(columns, v1alpha1.List))
+	err := c.init(filterColumns(columns, v1alpha1.List), fnDashboard, fnExec)
 	return c, err
 }
 
@@ -92,7 +95,6 @@ func FilterColumnsWithDefaults(
 	columns []v1alpha1.ResourceColumnDefinition,
 	priority v1alpha1.Priority,
 ) []v1alpha1.ResourceColumnDefinition {
-
 	// columns are specified in resource description, so use those.
 	out := filterColumns(columns, priority)
 	if len(out) > 0 {
@@ -143,9 +145,85 @@ func FilterColumnsWithDefaults(
 	return append(defaultColumns, additionalColumns...)
 }
 
-func (c *convertor) init(columns []v1alpha1.ResourceColumnDefinition) error {
+func (c *convertor) init(columns []v1alpha1.ResourceColumnDefinition, fnDashboard DashboardRendererFunc, fnExec ResourceExecFunc) error {
+	for i, c := range columns {
+		if c.Dashboard != nil && c.Dashboard.Name != "" {
+			if fnDashboard == nil {
+				return errors.New("missing dashboard renderer")
+			}
+			if obj, url, err := fnDashboard(c.Dashboard.Name); err != nil {
+				c.Dashboard.Status = v1alpha1.RenderError
+				c.Dashboard.Message = err.Error()
+			} else {
+				c.Dashboard.Dashboard = &obj.Spec.Dashboards[0]
+				c.Dashboard.URL = url
+				c.Dashboard.Status = v1alpha1.RenderSuccess
+			}
+		} else if c.Exec != nil {
+			if len(c.Exec.Command) == 0 {
+				if fnExec == nil {
+					return errors.New("missing exec renderer")
+				}
+				for idx, exec := range fnExec() {
+					match := (c.Exec.Alias == "" && idx == 0) || (c.Exec.Alias != "" && c.Exec.Alias == exec.Alias)
+					if match {
+						c.Exec.Alias = exec.Alias
+						c.Exec.ServiceNameTemplate = exec.ServiceNameTemplate
+						c.Exec.Container = exec.Container
+						c.Exec.Command = exec.Command
+						c.Exec.Help = exec.Help
+						break
+					}
+				}
+			}
+		}
+		columns[i] = c
+	}
+
 	c.headers = append(c.headers, columns...)
 	return nil
+}
+
+func addTargetVars(in *v1alpha1.DashboardDefinition, data interface{}, buf *bytes.Buffer) (string, error) {
+	varname := func(s string) string {
+		if strings.HasPrefix(s, "var-") {
+			return s
+		}
+		return "var-" + s
+	}
+	u, err := url.Parse(in.URL)
+	if err != nil {
+		return "", err
+	}
+	d := in.Dashboard
+
+	var sb strings.Builder
+	for _, v := range d.Vars {
+		if v.Type != shared.DashboardVarTypeTarget {
+			continue
+		}
+		if sb.Len() > 0 {
+			sb.WriteByte('&')
+		}
+		sb.WriteString(url.QueryEscape(varname(v.Name)))
+		sb.WriteByte('=')
+
+		val, err := renderTemplate(data, columnOptions{
+			Name:     "",
+			Type:     "string",
+			Template: v.Value,
+		}, buf)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to render the value of variable %q in dashboard with title %s", v.Name, d.Title)
+		}
+		sb.WriteString(val.(string))
+	}
+	if len(u.RawQuery) > 0 {
+		u.RawQuery += "&"
+	}
+	u.RawQuery += sb.String()
+
+	return u.String(), nil
 }
 
 func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
@@ -159,9 +237,68 @@ func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
 
 	cells := make([]v1alpha1.TableCell, 0, len(c.headers))
 	for _, col := range c.headers {
-
 		var cell v1alpha1.TableCell
-		{
+
+		if col.Dashboard != nil {
+			// if dashboard type column, set dashboard url as data for cell
+			if col.Dashboard.Status == v1alpha1.RenderSuccess {
+				if u, err := addTargetVars(col.Dashboard, data, buf); err != nil {
+					return nil, err
+				} else {
+					cell.Data = u
+				}
+			}
+		} else if col.Exec != nil {
+			if col.Type == "string" {
+				if col.Exec.ServiceNameTemplate == "" {
+					if v, err := renderTemplate(data, columnOptions{
+						Name:     col.Name,
+						Type:     col.Type,
+						Template: col.PathTemplate,
+					}, buf); err != nil {
+						return nil, err
+					} else {
+						cell.Data = v
+					}
+				} else {
+					if v, err := renderTemplate(data, columnOptions{
+						Name:     col.Name,
+						Type:     "string",
+						Template: col.Exec.ServiceNameTemplate,
+					}, buf); err != nil {
+						return nil, err
+					} else {
+						cell.Data = v
+					}
+				}
+			} else {
+				if v, err := renderTemplate(data, columnOptions{
+					Name:     col.Name,
+					Type:     col.Type,
+					Template: col.PathTemplate,
+				}, buf); err != nil {
+					return nil, err
+				} else {
+					if col.Exec.Alias != "" {
+						var execs []v1alpha1.ResourceExec
+						err = meta_util.DecodeObject(v, &execs)
+						if err != nil {
+							return nil, errors.Wrapf(err, "failed to decode cell value for col %s", col.Name)
+						}
+						result := make([]v1alpha1.ResourceExec, 0, len(execs))
+						for _, exec := range execs {
+							if exec.Alias == col.Exec.Alias {
+								result = append(result, exec)
+								break
+							}
+						}
+						cell.Data = result
+					} else {
+						cell.Data = v
+					}
+				}
+			}
+		} else {
 			if v, err := renderTemplate(data, columnOptions{
 				Name:     col.Name,
 				Type:     col.Type,
@@ -192,6 +329,17 @@ func (c *convertor) rowFn(obj interface{}) ([]v1alpha1.TableCell, error) {
 				return nil, err
 			} else {
 				cell.Link = v.(string)
+			}
+		}
+		if col.Tooltip != nil && col.Tooltip.Template != "" {
+			if v, err := renderTemplate(data, columnOptions{
+				Name:     col.Name,
+				Type:     "string",
+				Template: col.Tooltip.Template,
+			}, buf); err != nil {
+				return nil, err
+			} else {
+				cell.Tooltip = v.(string)
 			}
 		}
 		if col.Icon != nil && col.Icon.Template != "" {
@@ -251,7 +399,7 @@ func renderTemplate(data interface{}, col columnOptions, buf *bytes.Buffer) (int
 	return cellForJSONValue(col, strings.ReplaceAll(buf.String(), "<no value>", ""))
 }
 
-func (c *convertor) ConvertToTable(_ context.Context, obj runtime.Object, _ runtime.Object) (*v1alpha1.Table, error) {
+func (c *convertor) ConvertToTable(_ context.Context, obj runtime.Object) (*v1alpha1.Table, error) {
 	table := &v1alpha1.Table{
 		Columns: make([]v1alpha1.ResourceColumn, 0, len(c.headers)),
 		Rows:    make([]v1alpha1.TableRow, 0),
@@ -275,16 +423,12 @@ func (c *convertor) ConvertToTable(_ context.Context, obj runtime.Object, _ runt
 	return table, err
 }
 
-func fields(path string) []string {
-	return strings.Split(strings.Trim(path, "."), ".")
-}
-
 func cellForJSONValue(col columnOptions, value string) (interface{}, error) {
 	value = strings.TrimSpace(value)
 	switch col.Type {
 	case "integer":
 		if value == "" {
-			return UnknownValue, nil
+			return lib.UnknownValue, nil
 		}
 		i64, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
@@ -293,7 +437,7 @@ func cellForJSONValue(col columnOptions, value string) (interface{}, error) {
 		return i64, nil
 	case "number":
 		if value == "" {
-			return UnknownValue, nil
+			return lib.UnknownValue, nil
 		}
 		f64, err := strconv.ParseFloat(value, 64)
 		if err != nil {
@@ -302,7 +446,7 @@ func cellForJSONValue(col columnOptions, value string) (interface{}, error) {
 		return f64, nil
 	case "boolean":
 		if value == "" {
-			return UnknownValue, nil
+			return lib.UnknownValue, nil
 		}
 		b, err := strconv.ParseBool(value)
 		if err != nil {
@@ -317,7 +461,7 @@ func cellForJSONValue(col columnOptions, value string) (interface{}, error) {
 		if err != nil {
 			return "<invalid>", nil
 		}
-		return metatable.ConvertToHumanReadableDateType(timestamp), nil
+		return ConvertToHumanReadableDateType(timestamp), nil
 	case "object":
 		if value == "" || value == "null" {
 			return map[string]interface{}{}, nil
@@ -357,15 +501,24 @@ func metaToTableRow(obj runtime.Object, fieldPath string, rowFn func(obj interfa
 		if err != nil {
 			return nil, err
 		}
+		var ns string
+		if a, err := meta.Accessor(obj); err == nil {
+			ns = a.GetNamespace()
+		}
 		return []v1alpha1.TableRow{
 			{
-				Cells: cells,
+				Cells:     cells,
+				Namespace: ns,
 			},
 		}, nil
 	}
 
 	// subtable
-	arr, ok, err := unstructured.NestedSlice(obj.(runtime.Unstructured).UnstructuredContent(), fields(fieldPath)...)
+	var ns string
+	if a, err := meta.Accessor(obj); err == nil {
+		ns = a.GetNamespace()
+	}
+	arr, ok, err := jq.QuerySlice(obj.(runtime.Unstructured).UnstructuredContent(), fieldPath)
 	if err != nil {
 		return nil, err
 	}
@@ -375,6 +528,7 @@ func metaToTableRow(obj runtime.Object, fieldPath string, rowFn func(obj interfa
 	rows := make([]v1alpha1.TableRow, 0, len(arr))
 	for _, item := range arr {
 		var row v1alpha1.TableRow
+		row.Namespace = ns
 		row.Cells, err = rowFn(item)
 		if err != nil {
 			return nil, err
@@ -399,9 +553,9 @@ func DefaultListColumns() []v1alpha1.ResourceColumnDefinition {
 			Link: &v1alpha1.AttributeDefinition{
 				// Template: "",
 			},
-			//Shape ShapeProperty `json:"shape,omitempty"`
-			//Icon  bool          `json:"icon,omitempty"`
-			//Color ColorProperty `json:"color,omitempty"`
+			// Shape ShapeProperty `json:"shape,omitempty"`
+			// Icon  bool          `json:"icon,omitempty"`
+			// Color ColorProperty `json:"color,omitempty"`
 		},
 		{
 			Name:         "Namespace",
@@ -454,9 +608,9 @@ func DefaultDetailsColumns() []v1alpha1.ResourceColumnDefinition {
 			Link: &v1alpha1.AttributeDefinition{
 				// Template: "",
 			},
-			//Shape ShapeProperty `json:"shape,omitempty"`
-			//Icon  bool          `json:"icon,omitempty"`
-			//Color ColorProperty `json:"color,omitempty"`
+			// Shape ShapeProperty `json:"shape,omitempty"`
+			// Icon  bool          `json:"icon,omitempty"`
+			// Color ColorProperty `json:"color,omitempty"`
 		},
 		{
 			Name:         "Namespace",

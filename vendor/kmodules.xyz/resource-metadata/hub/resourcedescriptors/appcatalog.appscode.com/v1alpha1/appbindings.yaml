@@ -20,7 +20,7 @@ spec:
       kind: Service
     type: MatchRef
   - labels:
-    - auth_via
+    - config
     namespacePath: metadata.namespace
     references:
     - '{.spec.clientConfig.secret.name}'
@@ -28,11 +28,6 @@ spec:
       apiVersion: v1
       kind: Secret
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/appcatalog.appscode.com/appbindings.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/appcatalog.appscode.com/appbindings.png
-    type: image/png
   resource:
     group: appcatalog.appscode.com
     kind: AppBinding
@@ -70,6 +65,22 @@ spec:
         spec:
           description: AppBindingSpec is the spec for app
           properties:
+            appRef:
+              description: Reference to underlying application
+              properties:
+                apiGroup:
+                  type: string
+                kind:
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                  type: string
+                namespace:
+                  description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                  type: string
+              required:
+              - name
+              type: object
             clientConfig:
               description: ClientConfig defines how to communicate with the app. Required
               properties:
@@ -80,6 +91,9 @@ spec:
                 insecureSkipTLSVerify:
                   description: InsecureSkipTLSVerify disables TLS certificate verification when communicating with this app. This is strongly discouraged.  You should use the CABundle instead.
                   type: boolean
+                serverName:
+                  description: ServerName is used to verify the hostname on the returned certificates unless InsecureSkipVerify is given. It is also included in the client's handshake to support virtual hosting unless it is an IP address.
+                  type: string
                 service:
                   description: "`service` is a reference to the service for this app. Either `service` or `url` must be specified. \n If the webhook is running within the cluster, then you should use `service`."
                   properties:
@@ -123,6 +137,7 @@ spec:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
             secretTransforms:
               description: List of transformations that should be applied to the credentials associated with the ServiceBinding before they are inserted into the Secret.
               items:
@@ -154,6 +169,7 @@ spec:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   removeKey:
                     description: RemoveKey represents a transform that removes a credentials Secret entry
@@ -179,6 +195,14 @@ spec:
                     type: object
                 type: object
               type: array
+            tlsSecret:
+              description: TLSSecret is the name of the secret that will hold the client certificate and private key associated with the AppBinding.
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+              x-kubernetes-map-type: atomic
             type:
               description: Type used to facilitate programmatic handling of application.
               type: string

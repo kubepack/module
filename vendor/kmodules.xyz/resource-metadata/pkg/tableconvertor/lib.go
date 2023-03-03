@@ -18,9 +18,11 @@ package tableconvertor
 
 import (
 	"context"
+	"fmt"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
-	"kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
+	rsapi "kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
+	uiapi "kmodules.xyz/resource-metadata/apis/ui/v1alpha1"
 	tabledefs "kmodules.xyz/resource-metadata/hub/resourcetabledefinitions"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,9 +31,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewForGVR(kc client.Client, gvr schema.GroupVersionResource, priority v1alpha1.Priority) (TableConvertor, error) {
-	var columns []v1alpha1.ResourceColumnDefinition
-	if def, ok := tabledefs.LoadDefaultByGVR(gvr); ok {
+type DashboardRendererFunc func(name string) (*uiapi.ResourceDashboard, string, error)
+
+type ResourceExecFunc func() []rsapi.ResourceExec
+
+func NewForGVR(
+	kc client.Client,
+	gvr schema.GroupVersionResource,
+	priority rsapi.Priority,
+	tableDefName string,
+	fnDashboard DashboardRendererFunc,
+	fnExec ResourceExecFunc,
+) (TableConvertor, error) {
+	var columns []rsapi.ResourceColumnDefinition
+	if tableDefName == "" {
+		if def, ok := tabledefs.LoadDefaultByGVR(gvr); ok {
+			columns = def.Spec.Columns
+		}
+	} else {
+		def, err := tabledefs.LoadByName(tableDefName)
+		if err != nil {
+			return nil, err
+		}
+		if def.Spec.Resource != nil {
+			if def.Spec.Resource.GroupVersionResource() != gvr {
+				return nil, fmt.Errorf("table definition %s is for %s and can't be used with %s", tableDefName, def.Spec.Resource.GroupVersionResource(), gvr)
+			}
+		}
 		columns = def.Spec.Columns
 	}
 
@@ -43,12 +69,47 @@ func NewForGVR(kc client.Client, gvr schema.GroupVersionResource, priority v1alp
 	columns = FilterColumnsWithDefaults(kc, gvr, columns, priority)
 
 	c := &convertor{}
-	err = c.init(columns)
+	err = c.init(columns, fnDashboard, fnExec)
 	return c, err
 }
 
-func TableForList(kc client.Client, gvr schema.GroupVersionResource, items []unstructured.Unstructured) (*v1alpha1.Table, error) {
-	c, err := NewForGVR(kc, gvr, v1alpha1.List)
+func TableForAnyList(
+	kc client.Client,
+	items []unstructured.Unstructured,
+	tableDefName string,
+	fnDashboard DashboardRendererFunc,
+	fnExec ResourceExecFunc,
+) (*rsapi.Table, error) {
+	if len(items) == 0 {
+		return &rsapi.Table{
+			Rows: make([]rsapi.TableRow, 0),
+		}, nil
+	}
+
+	gvk := items[0].GetObjectKind().GroupVersionKind()
+	rid, err := kmapi.ExtractResourceID(kc.RESTMapper(), kmapi.ResourceID{
+		Group:   gvk.Group,
+		Version: gvk.Version,
+		Name:    "",
+		Kind:    gvk.Kind,
+		Scope:   "",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return TableForList(kc, rid.GroupVersionResource(), items, tableDefName, fnDashboard, fnExec)
+}
+
+func TableForList(
+	kc client.Client,
+	gvr schema.GroupVersionResource,
+	items []unstructured.Unstructured,
+	tableDefName string,
+	fnDashboard DashboardRendererFunc,
+	fnExec ResourceExecFunc,
+) (*rsapi.Table, error) {
+	c, err := NewForGVR(kc, gvr, rsapi.List, tableDefName, fnDashboard, fnExec)
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +117,16 @@ func TableForList(kc client.Client, gvr schema.GroupVersionResource, items []uns
 	obj := &unstructured.UnstructuredList{
 		Items: items,
 	}
-	return c.ConvertToTable(ctx, obj, nil)
+	return c.ConvertToTable(ctx, obj)
 }
 
-func TableForObject(kc client.Client, obj runtime.Object) (*v1alpha1.Table, error) {
+func TableForObject(
+	kc client.Client,
+	obj runtime.Object,
+	tableDefName string,
+	fnDashboard DashboardRendererFunc,
+	fnExec ResourceExecFunc,
+) (*rsapi.Table, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	rid, err := kmapi.ExtractResourceID(kc.RESTMapper(), kmapi.ResourceID{
 		Group:   gvk.Group,
@@ -72,10 +139,10 @@ func TableForObject(kc client.Client, obj runtime.Object) (*v1alpha1.Table, erro
 		return nil, err
 	}
 
-	c, err := NewForGVR(kc, rid.GroupVersionResource(), v1alpha1.Field)
+	c, err := NewForGVR(kc, rid.GroupVersionResource(), rsapi.Field, tableDefName, fnDashboard, fnExec)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ConvertToTable(context.TODO(), obj, nil)
+	return c.ConvertToTable(context.TODO(), obj)
 }

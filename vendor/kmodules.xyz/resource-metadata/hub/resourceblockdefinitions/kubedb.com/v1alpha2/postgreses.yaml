@@ -27,7 +27,7 @@ spec:
     kind: Connection
     name: Postgres Version
     query:
-      byLabel: offshoot
+      byLabel: catalog
       type: GraphQL
     ref:
       group: catalog.kubedb.com
@@ -71,7 +71,7 @@ spec:
     kind: Connection
     name: Secrets
     query:
-      byLabel: offshoot
+      byLabel: config
       type: GraphQL
     ref:
       group: ""
@@ -93,7 +93,7 @@ spec:
     kind: Connection
     name: Pod Disruption Budgets
     query:
-      byLabel: offshoot
+      byLabel: policy
       type: GraphQL
     ref:
       group: policy

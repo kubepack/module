@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/resource-metadata/apis/shared"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +36,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=resourcelayouts,singular=resourcelayout
+// +kubebuilder:resource:path=resourcelayouts,singular=resourcelayout,scope=Cluster
 type ResourceLayout struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -44,12 +45,12 @@ type ResourceLayout struct {
 }
 
 type ResourceLayoutSpec struct {
-	Resource      kmapi.ResourceID     `json:"resource"`
-	DefaultLayout bool                 `json:"defaultLayout"`
-	Header        *PageBlockLayout     `json:"header,omitempty"`
-	TabBar        *PageBlockLayout     `json:"tabBar,omitempty"`
-	Pages         []ResourcePageLayout `json:"pages,omitempty"`
-	UI            *UIParameters        `json:"ui,omitempty"`
+	Resource      kmapi.ResourceID            `json:"resource"`
+	DefaultLayout bool                        `json:"defaultLayout"`
+	Header        *PageBlockLayout            `json:"header,omitempty"`
+	TabBar        *PageBlockLayout            `json:"tabBar,omitempty"`
+	Pages         []ResourcePageLayout        `json:"pages,omitempty"`
+	UI            *shared.UIParameterTemplate `json:"ui,omitempty"`
 }
 
 type ResourcePageLayout struct {
@@ -65,9 +66,9 @@ type PageBlockLayout struct {
 
 	FieldPath string `json:"fieldPath,omitempty"`
 
-	*ResourceLocator `json:",inline,omitempty"`
-	DisplayMode      ResourceDisplayMode `json:"displayMode,omitempty"`
-	Actions          *ResourceActions    `json:"actions,omitempty"`
+	*shared.ResourceLocator `json:",inline,omitempty"`
+	DisplayMode             ResourceDisplayMode `json:"displayMode,omitempty"`
+	Actions                 *ResourceActions    `json:"actions,omitempty"`
 
 	View PageBlockTableDefinition `json:"view"`
 }

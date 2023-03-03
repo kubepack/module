@@ -143,6 +143,49 @@ func ParseObjectID(key OID) (*ObjectID, error) {
 	return &id, nil
 }
 
+func ObjectIDMap(key OID) (map[string]interface{}, error) {
+	id := map[string]interface{}{
+		"group":     "",
+		"kind":      "",
+		"namespace": "",
+		"name":      "",
+	}
+
+	chunks := strings.Split(string(key), ",")
+	for _, chunk := range chunks {
+		parts := strings.FieldsFunc(chunk, func(r rune) bool {
+			return r == '=' || unicode.IsSpace(r)
+		})
+		if len(parts) == 0 || len(parts) > 2 {
+			return nil, fmt.Errorf("invalid chunk %s", chunk)
+		}
+
+		switch parts[0] {
+		case "G":
+			if len(parts) == 2 {
+				id["group"] = parts[1]
+			}
+		case "K":
+			if len(parts) == 1 {
+				return nil, fmt.Errorf("kind not set")
+			}
+			id["kind"] = parts[1]
+		case "NS":
+			if len(parts) == 2 {
+				id["namespace"] = parts[1]
+			}
+		case "N":
+			if len(parts) == 1 {
+				return nil, fmt.Errorf("name not set")
+			}
+			id["name"] = parts[1]
+		default:
+			return nil, fmt.Errorf("unknown key %s", parts[0])
+		}
+	}
+	return id, nil
+}
+
 func (oid *ObjectID) GroupKind() schema.GroupKind {
 	return schema.GroupKind{Group: oid.Group, Kind: oid.Kind}
 }
@@ -164,18 +207,30 @@ type ObjectInfo struct {
 	Ref      ObjectReference `json:"ref" protobuf:"bytes,2,opt,name=ref"`
 }
 
-// +kubebuilder:validation:Enum=auth_via;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view
+// +kubebuilder:validation:Enum=id;config;backup_via;catalog;connect_via;exposed_by;monitored_by;offshoot;restore_into;scaled_by;view;cert_issuer;policy;recommended_for;ops
 type EdgeLabel string
 
 const (
-	EdgeAuthVia     EdgeLabel = "auth_via"
-	EdgeBackupVia   EdgeLabel = "backup_via"
-	EdgeCatalog     EdgeLabel = "catalog"
-	EdgeConnectVia  EdgeLabel = "connect_via"
-	EdgeExposedBy   EdgeLabel = "exposed_by"
-	EdgeMonitoredBy EdgeLabel = "monitored_by"
-	EdgeOffshoot    EdgeLabel = "offshoot"
-	EdgeRestoreInto EdgeLabel = "restore_into"
-	EdgeScaledBy    EdgeLabel = "scaled_by"
-	EdgeView        EdgeLabel = "view"
+	EdgeId             EdgeLabel = "id"
+	EdgeConfig         EdgeLabel = "config"
+	EdgeBackupVia      EdgeLabel = "backup_via"
+	EdgeCatalog        EdgeLabel = "catalog"
+	EdgeConnectVia     EdgeLabel = "connect_via"
+	EdgeExposedBy      EdgeLabel = "exposed_by"
+	EdgeMonitoredBy    EdgeLabel = "monitored_by"
+	EdgeOffshoot       EdgeLabel = "offshoot"
+	EdgeRestoreInto    EdgeLabel = "restore_into"
+	EdgeScaledBy       EdgeLabel = "scaled_by"
+	EdgeView           EdgeLabel = "view"
+	EdgeCertIssuer     EdgeLabel = "cert_issuer"
+	EdgePolicy         EdgeLabel = "policy"
+	EdgeOps            EdgeLabel = "ops"
+	EdgeRecommendedFor EdgeLabel = "recommended_for"
 )
+
+func (e EdgeLabel) Direct() bool {
+	return e == EdgeOffshoot ||
+		e == EdgeView ||
+		e == EdgeOps ||
+		e == EdgeRecommendedFor
+}

@@ -111,6 +111,10 @@ spec:
                   userOID:
                     format: int64
                     type: integer
+                required:
+                - databaseOID
+                - query
+                - userOID
                 type: object
               type: array
           required:

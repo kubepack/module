@@ -12,7 +12,7 @@ spec:
     listKind: ResourceLayoutList
     plural: resourcelayouts
     singular: resourcelayout
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -63,7 +63,8 @@ spec:
                     properties:
                       byLabel:
                         enum:
-                        - auth_via
+                        - id
+                        - config
                         - backup_via
                         - catalog
                         - connect_via
@@ -73,6 +74,10 @@ spec:
                         - restore_into
                         - scaled_by
                         - view
+                        - cert_issuer
+                        - policy
+                        - recommended_for
+                        - ops
                         type: string
                       raw:
                         type: string
@@ -107,13 +112,34 @@ spec:
                             color:
                               properties:
                                 template:
-                                  description: 'Available color codes: success,danger,neutral,warning,info'
+                                  description: 'Available color codes: success,danger,warning,info,
+                                    link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                  type: string
+                              type: object
+                            dashboard:
+                              properties:
+                                name:
                                   type: string
                               type: object
                             description:
                               description: description is a human readable description
                                 of this column.
                               type: string
+                            exec:
+                              properties:
+                                alias:
+                                  type: string
+                                command:
+                                  items:
+                                    type: string
+                                  type: array
+                                container:
+                                  type: string
+                                help:
+                                  type: string
+                                serviceNameTemplate:
+                                  type: string
+                              type: object
                             format:
                               description: format is an optional OpenAPI type definition
                                 for this column. The 'name' format is applied to the
@@ -178,6 +204,13 @@ spec:
                               required:
                               - type
                               type: object
+                            textAlign:
+                              type: string
+                            tooltip:
+                              properties:
+                                template:
+                                  type: string
+                              type: object
                             type:
                               description: type is an OpenAPI type definition for
                                 this column. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
@@ -229,7 +262,8 @@ spec:
                             properties:
                               byLabel:
                                 enum:
-                                - auth_via
+                                - id
+                                - config
                                 - backup_via
                                 - catalog
                                 - connect_via
@@ -239,6 +273,10 @@ spec:
                                 - restore_into
                                 - scaled_by
                                 - view
+                                - cert_issuer
+                                - policy
+                                - recommended_for
+                                - ops
                                 type: string
                               raw:
                                 type: string
@@ -274,13 +312,34 @@ spec:
                                     color:
                                       properties:
                                         template:
-                                          description: 'Available color codes: success,danger,neutral,warning,info'
+                                          description: 'Available color codes: success,danger,warning,info,
+                                            link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                          type: string
+                                      type: object
+                                    dashboard:
+                                      properties:
+                                        name:
                                           type: string
                                       type: object
                                     description:
                                       description: description is a human readable
                                         description of this column.
                                       type: string
+                                    exec:
+                                      properties:
+                                        alias:
+                                          type: string
+                                        command:
+                                          items:
+                                            type: string
+                                          type: array
+                                        container:
+                                          type: string
+                                        help:
+                                          type: string
+                                        serviceNameTemplate:
+                                          type: string
+                                      type: object
                                     format:
                                       description: format is an optional OpenAPI type
                                         definition for this column. The 'name' format
@@ -349,6 +408,13 @@ spec:
                                       required:
                                       - type
                                       type: object
+                                    textAlign:
+                                      type: string
+                                    tooltip:
+                                      properties:
+                                        template:
+                                          type: string
+                                      type: object
                                     type:
                                       description: type is an OpenAPI type definition
                                         for this column. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
@@ -397,7 +463,8 @@ spec:
                           properties:
                             byLabel:
                               enum:
-                              - auth_via
+                              - id
+                              - config
                               - backup_via
                               - catalog
                               - connect_via
@@ -407,6 +474,10 @@ spec:
                               - restore_into
                               - scaled_by
                               - view
+                              - cert_issuer
+                              - policy
+                              - recommended_for
+                              - ops
                               type: string
                             raw:
                               type: string
@@ -442,13 +513,34 @@ spec:
                                   color:
                                     properties:
                                       template:
-                                        description: 'Available color codes: success,danger,neutral,warning,info'
+                                        description: 'Available color codes: success,danger,warning,info,
+                                          link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                        type: string
+                                    type: object
+                                  dashboard:
+                                    properties:
+                                      name:
                                         type: string
                                     type: object
                                   description:
                                     description: description is a human readable description
                                       of this column.
                                     type: string
+                                  exec:
+                                    properties:
+                                      alias:
+                                        type: string
+                                      command:
+                                        items:
+                                          type: string
+                                        type: array
+                                      container:
+                                        type: string
+                                      help:
+                                        type: string
+                                      serviceNameTemplate:
+                                        type: string
+                                    type: object
                                   format:
                                     description: format is an optional OpenAPI type
                                       definition for this column. The 'name' format
@@ -515,6 +607,13 @@ spec:
                                         type: string
                                     required:
                                     - type
+                                    type: object
+                                  textAlign:
+                                    type: string
+                                  tooltip:
+                                    properties:
+                                      template:
+                                        type: string
                                     type: object
                                   type:
                                     description: type is an OpenAPI type definition
@@ -563,7 +662,8 @@ spec:
                           properties:
                             byLabel:
                               enum:
-                              - auth_via
+                              - id
+                              - config
                               - backup_via
                               - catalog
                               - connect_via
@@ -573,6 +673,10 @@ spec:
                               - restore_into
                               - scaled_by
                               - view
+                              - cert_issuer
+                              - policy
+                              - recommended_for
+                              - ops
                               type: string
                             raw:
                               type: string
@@ -608,13 +712,34 @@ spec:
                                   color:
                                     properties:
                                       template:
-                                        description: 'Available color codes: success,danger,neutral,warning,info'
+                                        description: 'Available color codes: success,danger,warning,info,
+                                          link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                        type: string
+                                    type: object
+                                  dashboard:
+                                    properties:
+                                      name:
                                         type: string
                                     type: object
                                   description:
                                     description: description is a human readable description
                                       of this column.
                                     type: string
+                                  exec:
+                                    properties:
+                                      alias:
+                                        type: string
+                                      command:
+                                        items:
+                                          type: string
+                                        type: array
+                                      container:
+                                        type: string
+                                      help:
+                                        type: string
+                                      serviceNameTemplate:
+                                        type: string
+                                    type: object
                                   format:
                                     description: format is an optional OpenAPI type
                                       definition for this column. The 'name' format
@@ -681,6 +806,13 @@ spec:
                                         type: string
                                     required:
                                     - type
+                                    type: object
+                                  textAlign:
+                                    type: string
+                                  tooltip:
+                                    properties:
+                                      template:
+                                        type: string
                                     type: object
                                   type:
                                     description: type is an OpenAPI type definition
@@ -760,7 +892,8 @@ spec:
                     properties:
                       byLabel:
                         enum:
-                        - auth_via
+                        - id
+                        - config
                         - backup_via
                         - catalog
                         - connect_via
@@ -770,6 +903,10 @@ spec:
                         - restore_into
                         - scaled_by
                         - view
+                        - cert_issuer
+                        - policy
+                        - recommended_for
+                        - ops
                         type: string
                       raw:
                         type: string
@@ -804,13 +941,34 @@ spec:
                             color:
                               properties:
                                 template:
-                                  description: 'Available color codes: success,danger,neutral,warning,info'
+                                  description: 'Available color codes: success,danger,warning,info,
+                                    link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                  type: string
+                              type: object
+                            dashboard:
+                              properties:
+                                name:
                                   type: string
                               type: object
                             description:
                               description: description is a human readable description
                                 of this column.
                               type: string
+                            exec:
+                              properties:
+                                alias:
+                                  type: string
+                                command:
+                                  items:
+                                    type: string
+                                  type: array
+                                container:
+                                  type: string
+                                help:
+                                  type: string
+                                serviceNameTemplate:
+                                  type: string
+                              type: object
                             format:
                               description: format is an optional OpenAPI type definition
                                 for this column. The 'name' format is applied to the
@@ -875,6 +1033,13 @@ spec:
                               required:
                               - type
                               type: object
+                            textAlign:
+                              type: string
+                            tooltip:
+                              properties:
+                                template:
+                                  type: string
+                              type: object
                             type:
                               description: type is an OpenAPI type definition for
                                 this column. See https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
@@ -895,9 +1060,75 @@ spec:
                 type: object
               ui:
                 properties:
+                  actions:
+                    items:
+                      properties:
+                        description:
+                          type: string
+                        items:
+                          items:
+                            properties:
+                              description:
+                                type: string
+                              disabledTemplate:
+                                type: string
+                              editor:
+                                description: ExpandedChartRepoRef references to a
+                                  single version of a Chart
+                                properties:
+                                  name:
+                                    type: string
+                                  url:
+                                    type: string
+                                  version:
+                                    type: string
+                                required:
+                                - name
+                                - version
+                                type: object
+                              flow:
+                                type: string
+                              icons:
+                                items:
+                                  description: ImageSpec contains information about
+                                    an image used as an icon.
+                                  properties:
+                                    size:
+                                      description: (optional) The size of the image
+                                        in pixels (e.g., 25x25).
+                                      type: string
+                                    src:
+                                      description: The source for image represented
+                                        as either an absolute URL to the image or
+                                        a Data URL containing the image. Data URLs
+                                        are defined in RFC 2397.
+                                      type: string
+                                    type:
+                                      description: (optional) The mine type of the
+                                        image (e.g., "image/png").
+                                      type: string
+                                  required:
+                                  - src
+                                  type: object
+                                type: array
+                              name:
+                                type: string
+                              operationId:
+                                type: string
+                            required:
+                            - flow
+                            - operationId
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      required:
+                      - items
+                      type: object
+                    type: array
                   editor:
-                    description: ChartRepoRef references to a single version of a
-                      Chart
+                    description: ExpandedChartRepoRef references to a single version
+                      of a Chart
                     properties:
                       name:
                         type: string
@@ -916,8 +1147,8 @@ spec:
                       type: string
                     type: array
                   options:
-                    description: ChartRepoRef references to a single version of a
-                      Chart
+                    description: ExpandedChartRepoRef references to a single version
+                      of a Chart
                     properties:
                       name:
                         type: string

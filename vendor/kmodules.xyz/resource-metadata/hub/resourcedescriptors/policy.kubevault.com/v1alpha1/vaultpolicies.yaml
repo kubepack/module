@@ -9,11 +9,6 @@ metadata:
     k8s.io/version: v1alpha1
   name: policy.kubevault.com-v1alpha1-vaultpolicies
 spec:
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/policy.kubevault.com/vaultpolicies.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/policy.kubevault.com/vaultpolicies.png
-    type: image/png
   resource:
     group: policy.kubevault.com
     kind: VaultPolicy
@@ -57,7 +52,7 @@ spec:
               x-kubernetes-embedded-resource: true
               x-kubernetes-preserve-unknown-fields: true
             policyDocument:
-              description: 'PolicyDocument specifies a vault policy in hcl format. For example: path "secret/*" {   capabilities = ["create", "read", "update", "delete", "list"] }'
+              description: 'PolicyDocument specifies a vault policy in hcl format. For example: path "secret/*" { capabilities = ["create", "read", "update", "delete", "list"] }'
               type: string
             vaultPolicyName:
               description: 'VaultPolicyName is the policy name set inside Vault. This defaults to following format: k8s.${cluster}.${metadata.namespace}.${metadata.name}'
@@ -69,6 +64,7 @@ spec:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
           required:
           - vaultRef
           type: object

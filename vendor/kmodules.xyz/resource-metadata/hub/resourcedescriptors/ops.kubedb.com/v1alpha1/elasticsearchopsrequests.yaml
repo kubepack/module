@@ -11,18 +11,13 @@ metadata:
 spec:
   connections:
   - labels:
-    - offshoot
+    - ops
     references:
     - '{.spec.databaseRef.name}'
     target:
       apiVersion: kubedb.com/v1alpha2
       kind: Elasticsearch
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/elasticsearchopsrequests.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/elasticsearchopsrequests.png
-    type: image/png
   resource:
     group: ops.kubedb.com
     kind: ElasticsearchOpsRequest
@@ -57,6 +52,12 @@ spec:
           type: object
         spec:
           properties:
+            apply:
+              default: IfReady
+              enum:
+              - IfReady
+              - Always
+              type: string
             configuration:
               properties:
                 applyConfig:
@@ -68,6 +69,7 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 removeCustomConfig:
                   type: boolean
                 removeSecureCustomConfig:
@@ -77,12 +79,14 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
               type: object
             databaseRef:
               properties:
                 name:
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
             horizontalScaling:
               properties:
                 node:
@@ -162,6 +166,7 @@ spec:
                         - kind
                         - name
                         type: object
+                        x-kubernetes-map-type: atomic
                       privateKey:
                         properties:
                           encoding:
@@ -227,6 +232,7 @@ spec:
                   - kind
                   - name
                   type: object
+                  x-kubernetes-map-type: atomic
                 remove:
                   type: boolean
                 rotateCertificates:
@@ -235,13 +241,13 @@ spec:
             type:
               enum:
               - Upgrade
+              - UpdateVersion
               - HorizontalScaling
               - VerticalScaling
               - VolumeExpansion
               - Restart
               - Reconfigure
               - ReconfigureTLS
-              - Reprovision
               type: string
             upgrade:
               properties:

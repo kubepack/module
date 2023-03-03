@@ -48,9 +48,9 @@ spec:
                 properties:
                   indexName:
                     type: string
-                  primaryStoreSizeInBytes:
+                  primaryStoreSizeBytes:
                     type: string
-                  totalStoreSizeInBytes:
+                  totalStoreSizeBytes:
                     type: string
                 type: object
               type: array

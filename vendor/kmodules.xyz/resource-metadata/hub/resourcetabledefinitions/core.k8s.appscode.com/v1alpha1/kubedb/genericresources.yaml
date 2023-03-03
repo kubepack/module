@@ -1,0 +1,66 @@
+apiVersion: meta.k8s.appscode.com/v1alpha1
+kind: ResourceTableDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    k8s.io/group: core.k8s.appscode.com
+    k8s.io/kind: GenericResource
+    k8s.io/resource: genericresources
+    k8s.io/version: v1alpha1
+  name: core.k8s.appscode.com-v1alpha1-genericresources-kubedb
+spec:
+  columns:
+  - name: Namespace
+    pathTemplate: '{{ .metadata.namespace }}'
+    priority: 3
+    type: string
+  - name: Version
+    pathTemplate: '{{ .spec.version }}'
+    priority: 3
+    type: string
+  - name: Mode
+    pathTemplate: '{{ .spec.mode }}'
+    priority: 3
+    type: string
+  - format: resource-map
+    name: CPU
+    pathTemplate: '{{- printf `{ "request": "%s", "limit": "%s" }` (dig "requests" "cpu" "" .spec.appResource) (dig "limits" "cpu" "" .spec.appResource) -}}'
+    priority: 3
+    type: object
+  - format: resource-map
+    name: Memory
+    pathTemplate: '{{- printf `{ "request": "%s", "limit": "%s" }` (dig "requests" "memory" "" .spec.appResource) (dig "limits" "memory" "" .spec.appResource) -}}'
+    priority: 3
+    type: object
+  - format: resource-map
+    name: Storage
+    pathTemplate: '{{- printf `{ "request": "%s", "limit": "%s" }` (dig "requests" "storage" "" .spec.appResource) (dig "limits" "storage" "" .spec.appResource) -}}'
+    priority: 3
+    type: object
+  - color:
+      template: |
+        {{ $status := .status.phase }}
+        {{ $color := "gray" }}
+        {{ if list "Provisioning" "DataRestoring" | has $status }}
+          {{ $color = "info" }}
+        {{ else if list "Ready" | has $status }}
+          {{ $color = "success" }}
+        {{ else if list "Critical" | has $status }}
+          {{ $color = "warning" }}
+        {{ else if list "NotReady" | has $status }}
+          {{ $color = "danger" }}
+        {{ else if list "Halted" | has $status }}
+          {{ $color = "gray" }}
+        {{ end }}
+        {{- printf "%s" $color -}}
+    name: Status
+    pathTemplate: '{{ .status.phase }}'
+    priority: 3
+    type: string
+  defaultView: false
+  resource:
+    group: core.k8s.appscode.com
+    kind: GenericResource
+    name: genericresources
+    scope: Namespaced
+    version: v1alpha1

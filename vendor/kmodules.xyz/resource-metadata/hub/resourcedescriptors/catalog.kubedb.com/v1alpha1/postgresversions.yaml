@@ -9,11 +9,6 @@ metadata:
     k8s.io/version: v1alpha1
   name: catalog.kubedb.com-v1alpha1-postgresversions
 spec:
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/catalog.kubedb.com/postgresversions.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/catalog.kubedb.com/postgresversions.png
-    type: image/png
   resource:
     group: catalog.kubedb.com
     kind: PostgresVersion
@@ -54,6 +49,8 @@ spec:
               type: object
             db:
               properties:
+                baseOS:
+                  type: string
                 image:
                   type: string
               required:
@@ -144,6 +141,17 @@ spec:
                   - backupTask
                   - restoreTask
                   type: object
+              type: object
+            upgradeConstraints:
+              properties:
+                allowlist:
+                  items:
+                    type: string
+                  type: array
+                denylist:
+                  items:
+                    type: string
+                  type: array
               type: object
             version:
               type: string

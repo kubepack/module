@@ -45,17 +45,26 @@ spec:
           properties:
             compute:
               properties:
-                configServer:
+                arbiter:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
-                      format: int32
-                      type: integer
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -80,19 +89,114 @@ spec:
                     trigger:
                       type: string
                   type: object
-                disableScaleDown:
-                  type: boolean
-                mongos:
+                configServer:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
+                    maxAllowed:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                    minAllowed:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                    podLifeTimeThreshold:
+                      type: string
+                    resourceDiffPercentage:
                       format: int32
                       type: integer
+                    trigger:
+                      type: string
+                  type: object
+                hidden:
+                  properties:
+                    containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
+                      type: string
+                    controlledResources:
+                      items:
+                        type: string
+                      type: array
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
+                    maxAllowed:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                    minAllowed:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      type: object
+                    podLifeTimeThreshold:
+                      type: string
+                    resourceDiffPercentage:
+                      format: int32
+                      type: integer
+                    trigger:
+                      type: string
+                  type: object
+                mongos:
+                  properties:
+                    containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
+                      type: string
+                    controlledResources:
+                      items:
+                        type: string
+                      type: array
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -120,14 +224,23 @@ spec:
                 replicaSet:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
-                      format: int32
-                      type: integer
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -155,14 +268,23 @@ spec:
                 shard:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
-                      format: int32
-                      type: integer
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -190,14 +312,23 @@ spec:
                 standalone:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
-                      format: int32
-                      type: integer
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -228,10 +359,55 @@ spec:
                 name:
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
+            opsRequestOptions:
+              properties:
+                apply:
+                  default: IfReady
+                  enum:
+                  - IfReady
+                  - Always
+                  type: string
+                readinessCriteria:
+                  properties:
+                    objectsCountDiffPercentage:
+                      format: int32
+                      maximum: 100
+                      minimum: 0
+                      type: integer
+                    oplogMaxLagSeconds:
+                      format: int32
+                      minimum: 0
+                      type: integer
+                  type: object
+                timeout:
+                  type: string
+              type: object
             storage:
               properties:
                 configServer:
                   properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
+                    scalingThreshold:
+                      format: int32
+                      type: integer
+                    trigger:
+                      type: string
+                    usageThreshold:
+                      format: int32
+                      type: integer
+                  type: object
+                hidden:
+                  properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
                     scalingThreshold:
                       format: int32
                       type: integer
@@ -243,6 +419,11 @@ spec:
                   type: object
                 replicaSet:
                   properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
                     scalingThreshold:
                       format: int32
                       type: integer
@@ -254,6 +435,11 @@ spec:
                   type: object
                 shard:
                   properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
                     scalingThreshold:
                       format: int32
                       type: integer
@@ -265,6 +451,11 @@ spec:
                   type: object
                 standalone:
                   properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
                     scalingThreshold:
                       format: int32
                       type: integer

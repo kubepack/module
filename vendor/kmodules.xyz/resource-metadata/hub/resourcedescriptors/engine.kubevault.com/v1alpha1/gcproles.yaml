@@ -9,11 +9,6 @@ metadata:
     k8s.io/version: v1alpha1
   name: engine.kubevault.com-v1alpha1-gcproles
 spec:
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/engine.kubevault.com/gcproles.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/engine.kubevault.com/gcproles.png
-    type: image/png
   resource:
     group: engine.kubevault.com
     kind: GCPRole
@@ -67,6 +62,7 @@ spec:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
             secretType:
               description: Specifies the type of secret generated for this role set
               enum:

@@ -54,9 +54,9 @@ spec:
                   lastInsertId:
                     format: int64
                     type: integer
-                  lockTimeInMilliSeconds:
+                  lockTimeMilliSeconds:
                     type: string
-                  queryTimeInMilliSeconds:
+                  queryTimeMilliSeconds:
                     type: string
                   rowsAffected:
                     format: int64
@@ -80,6 +80,12 @@ spec:
                     type: integer
                   userHost:
                     type: string
+                required:
+                - db
+                - lockTimeMilliSeconds
+                - queryTimeMilliSeconds
+                - startTime
+                - userHost
                 type: object
               type: array
           required:
