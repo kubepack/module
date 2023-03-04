@@ -28,6 +28,8 @@ const (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=rendermenus,singular=rendermenu,scope=Cluster
 type RenderMenu struct {
 	metav1.TypeMeta `json:",inline"`
 	// Request describes the attributes for the render menu request.
@@ -47,11 +49,10 @@ type RenderMenuRequest struct {
 	Type *metav1.GroupKind `json:"type,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Accordion;DropDown;Gallery
+// +kubebuilder:validation:Enum=Accordion;Gallery
 type MenuMode string
 
 const (
 	MenuAccordion MenuMode = "Accordion"
-	MenuDropDown  MenuMode = "DropDown"
 	MenuGallery   MenuMode = "Gallery"
 )

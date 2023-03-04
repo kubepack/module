@@ -9,11 +9,6 @@ metadata:
     k8s.io/version: v1alpha1
   name: catalog.kubedb.com-v1alpha1-pgbouncerversions
 spec:
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/catalog.kubedb.com/pgbouncerversions.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/catalog.kubedb.com/pgbouncerversions.png
-    type: image/png
   resource:
     group: catalog.kubedb.com
     kind: PgBouncerVersion
@@ -54,18 +49,36 @@ spec:
               required:
               - image
               type: object
-            server:
+            initContainer:
               properties:
                 image:
                   type: string
               required:
               - image
               type: object
+            pgBouncer:
+              properties:
+                image:
+                  type: string
+              required:
+              - image
+              type: object
+            upgradeConstraints:
+              properties:
+                allowlist:
+                  items:
+                    type: string
+                  type: array
+                denylist:
+                  items:
+                    type: string
+                  type: array
+              type: object
             version:
               type: string
           required:
           - exporter
-          - server
+          - pgBouncer
           - version
           type: object
       type: object

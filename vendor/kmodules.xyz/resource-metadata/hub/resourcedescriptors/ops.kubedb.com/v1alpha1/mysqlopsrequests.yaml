@@ -11,18 +11,13 @@ metadata:
 spec:
   connections:
   - labels:
-    - offshoot
+    - ops
     references:
     - '{.spec.databaseRef.name}'
     target:
       apiVersion: kubedb.com/v1alpha2
       kind: MySQL
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/mysqlopsrequests.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/mysqlopsrequests.png
-    type: image/png
   resource:
     group: ops.kubedb.com
     kind: MySQLOpsRequest
@@ -57,6 +52,12 @@ spec:
           type: object
         spec:
           properties:
+            apply:
+              default: IfReady
+              enum:
+              - IfReady
+              - Always
+              type: string
             configuration:
               properties:
                 configSecret:
@@ -64,6 +65,7 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 inlineConfig:
                   type: string
                 removeCustomConfig:
@@ -74,6 +76,7 @@ spec:
                 name:
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
             horizontalScaling:
               properties:
                 member:
@@ -82,6 +85,8 @@ spec:
               type: object
             restart:
               type: object
+            timeout:
+              type: string
             tls:
               properties:
                 certificates:
@@ -115,6 +120,7 @@ spec:
                         - kind
                         - name
                         type: object
+                        x-kubernetes-map-type: atomic
                       privateKey:
                         properties:
                           encoding:
@@ -180,6 +186,7 @@ spec:
                   - kind
                   - name
                   type: object
+                  x-kubernetes-map-type: atomic
                 remove:
                   type: boolean
                 requireSSL:
@@ -190,13 +197,13 @@ spec:
             type:
               enum:
               - Upgrade
+              - UpdateVersion
               - HorizontalScaling
               - VerticalScaling
               - VolumeExpansion
               - Restart
               - Reconfigure
               - ReconfigureTLS
-              - Reprovision
               type: string
             upgrade:
               properties:
@@ -267,6 +274,12 @@ spec:
               type: object
             volumeExpansion:
               properties:
+                mode:
+                  default: Online
+                  enum:
+                  - Offline
+                  - Online
+                  type: string
                 mysql:
                   anyOf:
                   - type: integer

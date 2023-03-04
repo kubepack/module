@@ -12,7 +12,7 @@ spec:
     listKind: ResourceBlockDefinitionList
     plural: resourceblockdefinitions
     singular: resourceblockdefinition
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -62,7 +62,8 @@ spec:
                       properties:
                         byLabel:
                           enum:
-                          - auth_via
+                          - id
+                          - config
                           - backup_via
                           - catalog
                           - connect_via
@@ -72,6 +73,10 @@ spec:
                           - restore_into
                           - scaled_by
                           - view
+                          - cert_issuer
+                          - policy
+                          - recommended_for
+                          - ops
                           type: string
                         raw:
                           type: string
@@ -106,13 +111,34 @@ spec:
                               color:
                                 properties:
                                   template:
-                                    description: 'Available color codes: success,danger,neutral,warning,info'
+                                    description: 'Available color codes: success,danger,warning,info,
+                                      link, white, light, dark, black see https://bulma.io/documentation/elements/tag/#colors'
+                                    type: string
+                                type: object
+                              dashboard:
+                                properties:
+                                  name:
                                     type: string
                                 type: object
                               description:
                                 description: description is a human readable description
                                   of this column.
                                 type: string
+                              exec:
+                                properties:
+                                  alias:
+                                    type: string
+                                  command:
+                                    items:
+                                      type: string
+                                    type: array
+                                  container:
+                                    type: string
+                                  help:
+                                    type: string
+                                  serviceNameTemplate:
+                                    type: string
+                                type: object
                               format:
                                 description: format is an optional OpenAPI type definition
                                   for this column. The 'name' format is applied to
@@ -178,6 +204,13 @@ spec:
                                     type: string
                                 required:
                                 - type
+                                type: object
+                              textAlign:
+                                type: string
+                              tooltip:
+                                properties:
+                                  template:
+                                    type: string
                                 type: object
                               type:
                                 description: type is an OpenAPI type definition for

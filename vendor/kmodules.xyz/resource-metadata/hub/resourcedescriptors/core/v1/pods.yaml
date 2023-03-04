@@ -19,8 +19,7 @@ spec:
       kind: Node
     type: MatchRef
   - labels:
-    - offshoot
-    - auth_via
+    - id
     references:
     - '{.spec.serviceAccountName}'
     target:
@@ -37,7 +36,7 @@ spec:
       kind: PersistentVolumeClaim
     type: MatchRef
   - labels:
-    - offshoot
+    - config
     namespacePath: metadata.namespace
     references:
     - '{range .spec.containers[*].envFrom[*]}{.configMapRef.name}{"\n"}{end}'
@@ -48,7 +47,7 @@ spec:
       kind: ConfigMap
     type: MatchRef
   - labels:
-    - offshoot
+    - config
     namespacePath: metadata.namespace
     references:
     - '{range .spec.containers[*].envFrom[*]}{.secretRef.name}{"\n"}{end}'
@@ -66,11 +65,6 @@ spec:
       apiVersion: core.k8s.appscode.com/v1alpha1
       kind: PodView
     type: MatchName
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/core/pods.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/core/pods.png
-    type: image/png
   resource:
     group: ""
     kind: Pod

@@ -45,19 +45,26 @@ spec:
           properties:
             compute:
               properties:
-                disableScaleDown:
-                  type: boolean
                 node:
                   properties:
                     containerControlledValues:
+                      enum:
+                      - RequestsAndLimits
+                      - RequestsOnly
                       type: string
                     controlledResources:
                       items:
                         type: string
                       type: array
-                    inMemoryScalingThreshold:
-                      format: int32
-                      type: integer
+                    inMemoryStorage:
+                      properties:
+                        scalingFactorPercentage:
+                          format: int32
+                          type: integer
+                        usageThresholdPercentage:
+                          format: int32
+                          type: integer
+                      type: object
                     maxAllowed:
                       additionalProperties:
                         anyOf:
@@ -87,14 +94,23 @@ spec:
                     data:
                       properties:
                         containerControlledValues:
+                          enum:
+                          - RequestsAndLimits
+                          - RequestsOnly
                           type: string
                         controlledResources:
                           items:
                             type: string
                           type: array
-                        inMemoryScalingThreshold:
-                          format: int32
-                          type: integer
+                        inMemoryStorage:
+                          properties:
+                            scalingFactorPercentage:
+                              format: int32
+                              type: integer
+                            usageThresholdPercentage:
+                              format: int32
+                              type: integer
+                          type: object
                         maxAllowed:
                           additionalProperties:
                             anyOf:
@@ -122,14 +138,23 @@ spec:
                     ingest:
                       properties:
                         containerControlledValues:
+                          enum:
+                          - RequestsAndLimits
+                          - RequestsOnly
                           type: string
                         controlledResources:
                           items:
                             type: string
                           type: array
-                        inMemoryScalingThreshold:
-                          format: int32
-                          type: integer
+                        inMemoryStorage:
+                          properties:
+                            scalingFactorPercentage:
+                              format: int32
+                              type: integer
+                            usageThresholdPercentage:
+                              format: int32
+                              type: integer
+                          type: object
                         maxAllowed:
                           additionalProperties:
                             anyOf:
@@ -157,14 +182,23 @@ spec:
                     master:
                       properties:
                         containerControlledValues:
+                          enum:
+                          - RequestsAndLimits
+                          - RequestsOnly
                           type: string
                         controlledResources:
                           items:
                             type: string
                           type: array
-                        inMemoryScalingThreshold:
-                          format: int32
-                          type: integer
+                        inMemoryStorage:
+                          properties:
+                            scalingFactorPercentage:
+                              format: int32
+                              type: integer
+                            usageThresholdPercentage:
+                              format: int32
+                              type: integer
+                          type: object
                         maxAllowed:
                           additionalProperties:
                             anyOf:
@@ -196,10 +230,29 @@ spec:
                 name:
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
+            opsRequestOptions:
+              properties:
+                apply:
+                  default: IfReady
+                  enum:
+                  - IfReady
+                  - Always
+                  type: string
+                readinessCriteria:
+                  type: object
+                timeout:
+                  type: string
+              type: object
             storage:
               properties:
                 node:
                   properties:
+                    expansionMode:
+                      enum:
+                      - Offline
+                      - Online
+                      type: string
                     scalingThreshold:
                       format: int32
                       type: integer
@@ -213,6 +266,11 @@ spec:
                   properties:
                     data:
                       properties:
+                        expansionMode:
+                          enum:
+                          - Offline
+                          - Online
+                          type: string
                         scalingThreshold:
                           format: int32
                           type: integer
@@ -224,6 +282,11 @@ spec:
                       type: object
                     ingest:
                       properties:
+                        expansionMode:
+                          enum:
+                          - Offline
+                          - Online
+                          type: string
                         scalingThreshold:
                           format: int32
                           type: integer
@@ -235,6 +298,11 @@ spec:
                       type: object
                     master:
                       properties:
+                        expansionMode:
+                          enum:
+                          - Offline
+                          - Online
+                          type: string
                         scalingThreshold:
                           format: int32
                           type: integer

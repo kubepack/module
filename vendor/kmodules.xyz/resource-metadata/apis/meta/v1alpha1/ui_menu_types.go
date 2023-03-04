@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/resource-metadata/apis/shared"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,8 @@ const (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=menus,singular=menu,scope=Cluster
 type Menu struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -44,8 +47,6 @@ type MenuSpec struct {
 	Home *MenuSectionInfo `json:"home,omitempty"`
 	// +optional
 	Sections []*MenuSection `json:"sections,omitempty"`
-	// +optional
-	Items []MenuItem `json:"items,omitempty"`
 }
 
 type MenuSection struct {
@@ -66,7 +67,7 @@ type MenuSectionInfo struct {
 
 	// Icons is an optional list of icons for an application. Icon information includes the source, size,
 	// and mime type.
-	Icons []ImageSpec `json:"icons,omitempty"`
+	Icons []shared.ImageSpec `json:"icons,omitempty"`
 }
 
 type MenuItem struct {
@@ -80,10 +81,12 @@ type MenuItem struct {
 	// +optional
 	LayoutName string `json:"layoutName,omitempty"`
 	// +optional
-	Icons     []ImageSpec           `json:"icons,omitempty"`
-	Installer *DeploymentParameters `json:"installer,omitempty"`
+	Icons     []shared.ImageSpec           `json:"icons,omitempty"`
+	Installer *shared.DeploymentParameters `json:"installer,omitempty"`
 	// +optional
 	Preset *core.TypedLocalObjectReference `json:"preset,omitempty"`
+	// +optional
+	AvailableVariants int `json:"availableVariants,omitempty"`
 	// +optional
 	Items []MenuItem `json:"items,omitempty"`
 }

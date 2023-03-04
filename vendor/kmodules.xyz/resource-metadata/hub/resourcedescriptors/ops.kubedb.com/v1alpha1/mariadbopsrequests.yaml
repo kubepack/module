@@ -11,18 +11,13 @@ metadata:
 spec:
   connections:
   - labels:
-    - offshoot
+    - ops
     references:
     - '{.spec.databaseRef.name}'
     target:
       apiVersion: kubedb.com/v1alpha2
       kind: MariaDB
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/mariadbopsrequests.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/mariadbopsrequests.png
-    type: image/png
   resource:
     group: ops.kubedb.com
     kind: MariaDBOpsRequest
@@ -57,13 +52,24 @@ spec:
           type: object
         spec:
           properties:
+            apply:
+              default: IfReady
+              enum:
+              - IfReady
+              - Always
+              type: string
             configuration:
               properties:
+                applyConfig:
+                  additionalProperties:
+                    type: string
+                  type: object
                 configSecret:
                   properties:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 inlineConfig:
                   type: string
                 removeCustomConfig:
@@ -74,6 +80,7 @@ spec:
                 name:
                   type: string
               type: object
+              x-kubernetes-map-type: atomic
             horizontalScaling:
               properties:
                 member:
@@ -120,6 +127,7 @@ spec:
                         - kind
                         - name
                         type: object
+                        x-kubernetes-map-type: atomic
                       privateKey:
                         properties:
                           encoding:
@@ -185,6 +193,7 @@ spec:
                   - kind
                   - name
                   type: object
+                  x-kubernetes-map-type: atomic
                 remove:
                   type: boolean
                 requireSSL:
@@ -195,13 +204,13 @@ spec:
             type:
               enum:
               - Upgrade
+              - UpdateVersion
               - HorizontalScaling
               - VerticalScaling
               - VolumeExpansion
               - Restart
               - Reconfigure
               - ReconfigureTLS
-              - Reprovision
               type: string
             upgrade:
               properties:
@@ -276,6 +285,11 @@ spec:
                   - type: string
                   pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                   x-kubernetes-int-or-string: true
+                mode:
+                  enum:
+                  - Offline
+                  - Online
+                  type: string
               type: object
           required:
           - databaseRef

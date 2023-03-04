@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/resource-metadata/apis/shared"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +36,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=resourceoutlines,singular=resourceoutline
+// +kubebuilder:resource:path=resourceoutlines,singular=resourceoutline,scope=Cluster
 type ResourceOutline struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -49,7 +50,8 @@ type ResourceOutlineSpec struct {
 	Header        *PageBlockOutline     `json:"header,omitempty"`
 	TabBar        *PageBlockOutline     `json:"tabBar,omitempty"`
 	Pages         []ResourcePageOutline `json:"pages,omitempty"`
-	UI            *UIParameters         `json:"ui,omitempty"`
+	// +optional
+	Actions []*shared.ActionTemplateGroup `json:"actions,omitempty"`
 }
 
 type ResourcePageOutline struct {
@@ -70,13 +72,13 @@ const (
 )
 
 type PageBlockOutline struct {
-	Kind             TableKind `json:"kind"` // ResourceBlockDefinition | Connection | Subtable(Field)
-	Name             string    `json:"name,omitempty"`
-	FieldPath        string    `json:"fieldPath,omitempty"`
-	*ResourceLocator `json:",inline,omitempty"`
-	DisplayMode      ResourceDisplayMode         `json:"displayMode,omitempty"`
-	Actions          *ResourceActions            `json:"actions,omitempty"`
-	View             *ResourceTableDefinitionRef `json:"view,omitempty"`
+	Kind                    TableKind `json:"kind"` // ResourceBlockDefinition | Connection | Subtable(Field)
+	Name                    string    `json:"name,omitempty"`
+	FieldPath               string    `json:"fieldPath,omitempty"`
+	*shared.ResourceLocator `json:",inline,omitempty"`
+	DisplayMode             ResourceDisplayMode         `json:"displayMode,omitempty"`
+	Actions                 *ResourceActions            `json:"actions,omitempty"`
+	View                    *ResourceTableDefinitionRef `json:"view,omitempty"`
 }
 
 type ResourceTableDefinitionRef struct {

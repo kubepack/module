@@ -1,4 +1,4 @@
-apiVersion: meta.k8s.appscode.com/v1alpha1
+apiVersion: ui.k8s.appscode.com/v1alpha1
 kind: ResourceEditor
 metadata:
   creationTimestamp: null
@@ -9,6 +9,11 @@ metadata:
     k8s.io/version: v1alpha1
   name: rbac.authorization.k8s.io-v1alpha1-roles
 spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/rbac.authorization.k8s.io/roles.png
+    type: image/png
   resource:
     group: rbac.authorization.k8s.io
     kind: Role

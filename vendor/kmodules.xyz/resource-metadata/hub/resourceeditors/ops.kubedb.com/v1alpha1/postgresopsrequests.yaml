@@ -1,4 +1,4 @@
-apiVersion: meta.k8s.appscode.com/v1alpha1
+apiVersion: ui.k8s.appscode.com/v1alpha1
 kind: ResourceEditor
 metadata:
   creationTimestamp: null
@@ -9,6 +9,11 @@ metadata:
     k8s.io/version: v1alpha1
   name: ops.kubedb.com-v1alpha1-postgresopsrequests
 spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/postgresopsrequests.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/ops.kubedb.com/postgresopsrequests.png
+    type: image/png
   resource:
     group: ops.kubedb.com
     kind: PostgresOpsRequest
@@ -18,5 +23,8 @@ spec:
   ui:
     editor:
       name: opskubedbcom-postgresopsrequest-editor
-      url: https://bundles.byte.builders/ui/
-      version: v0.3.0
+      sourceRef:
+        apiGroup: source.toolkit.fluxcd.io
+        kind: HelmRepository
+        name: bytebuilders-ui
+      version: v0.4.13

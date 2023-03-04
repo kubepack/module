@@ -72,6 +72,11 @@ spec:
                     - DELETE
                     - GETMORE
                     type: string
+                required:
+                - collectionName
+                - command
+                - databaseName
+                - operation
                 type: object
               type: array
           required:

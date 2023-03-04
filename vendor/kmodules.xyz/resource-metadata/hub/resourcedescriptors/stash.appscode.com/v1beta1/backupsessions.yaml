@@ -19,11 +19,6 @@ spec:
       apiVersion: stash.appscode.com/v1beta1
       kind: BackupConfiguration
     type: MatchRef
-  icons:
-  - src: https://cdn.appscode.com/k8s/icons/stash.appscode.com/backupsessions.svg
-    type: image/svg+xml
-  - src: https://cdn.appscode.com/k8s/icons/stash.appscode.com/backupsessions.png
-    type: image/png
   resource:
     group: stash.appscode.com
     kind: BackupSession
@@ -76,5 +71,9 @@ spec:
               - kind
               - name
               type: object
+            retryLeft:
+              description: RetryLeft specifies number of retry attempts left for the session. If this set to non-zero, Stash will create a new BackupSession if the current one fails.
+              format: int32
+              type: integer
           type: object
       type: object

@@ -1,4 +1,4 @@
-apiVersion: meta.k8s.appscode.com/v1alpha1
+apiVersion: ui.k8s.appscode.com/v1alpha1
 kind: ResourceEditor
 metadata:
   creationTimestamp: null
@@ -9,6 +9,11 @@ metadata:
     k8s.io/version: v1beta1
   name: storage.k8s.io-v1beta1-csinodes
 spec:
+  icons:
+  - src: https://cdn.appscode.com/k8s/icons/storage.k8s.io/csinodes.svg
+    type: image/svg+xml
+  - src: https://cdn.appscode.com/k8s/icons/storage.k8s.io/csinodes.png
+    type: image/png
   resource:
     group: storage.k8s.io
     kind: CSINode

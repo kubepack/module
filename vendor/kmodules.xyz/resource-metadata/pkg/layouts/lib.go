@@ -17,17 +17,24 @@ limitations under the License.
 package layouts
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
+	"kmodules.xyz/resource-metadata/apis/shared"
 	"kmodules.xyz/resource-metadata/hub"
 	blockdefs "kmodules.xyz/resource-metadata/hub/resourceblockdefinitions"
+	"kmodules.xyz/resource-metadata/hub/resourceeditors"
 	"kmodules.xyz/resource-metadata/hub/resourceoutlines"
 	tabledefs "kmodules.xyz/resource-metadata/hub/resourcetabledefinitions"
 	"kmodules.xyz/resource-metadata/pkg/tableconvertor"
 
+	_ "github.com/fluxcd/source-controller/api/v1beta2"
+	fluxsrc "github.com/fluxcd/source-controller/api/v1beta2"
+	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -138,7 +145,6 @@ func generateDefaultLayout(kc client.Client, rid kmapi.ResourceID) (*v1alpha1.Re
 			//		// Blocks  []PageBlockOutline `json:"blocks" json:"blocks,omitempty"`
 			//	},
 			//},
-			UI: nil,
 		},
 	}
 	return GetResourceLayout(kc, outline)
@@ -178,7 +184,71 @@ func GetResourceLayout(kc client.Client, outline *v1alpha1.ResourceOutline) (*v1
 	result.ObjectMeta = outline.ObjectMeta
 	result.Spec.DefaultLayout = outline.Spec.DefaultLayout
 	result.Spec.Resource = outline.Spec.Resource
-	result.Spec.UI = outline.Spec.UI
+	if ed, ok := resourceeditors.LoadByGVR(kc, outline.Spec.Resource.GroupVersionResource()); ok {
+		if ed.Spec.UI != nil {
+			result.Spec.UI = &shared.UIParameterTemplate{
+				InstanceLabelPaths: ed.Spec.UI.InstanceLabelPaths,
+			}
+
+			expand := func(ref *shared.ChartRepoRef) (*shared.ExpandedChartRepoRef, error) {
+				if ref == nil {
+					return nil, nil
+				}
+				if ref.SourceRef.Namespace == "" {
+					ref.SourceRef.Namespace = meta_util.PodNamespace()
+				}
+				var src fluxsrc.HelmRepository
+				err := kc.Get(context.TODO(), client.ObjectKey{Namespace: ref.SourceRef.Namespace, Name: ref.SourceRef.Name}, &src)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to get HelmRepository %s/%s", ref.SourceRef.Namespace, ref.SourceRef.Name)
+				}
+				return &shared.ExpandedChartRepoRef{
+					Name:    ref.Name,
+					Version: ref.Version,
+					URL:     src.Spec.URL,
+				}, nil
+			}
+			{
+				ref, err := expand(ed.Spec.UI.Editor)
+				if err != nil {
+					return nil, err
+				}
+				result.Spec.UI.Editor = ref
+			}
+			{
+				ref, err := expand(ed.Spec.UI.Options)
+				if err != nil {
+					return nil, err
+				}
+				result.Spec.UI.Options = ref
+			}
+			{
+				result.Spec.UI.Actions = make([]*shared.ActionTemplateGroup, 0, len(ed.Spec.UI.Actions))
+				for _, ag := range ed.Spec.UI.Actions {
+					ag2 := shared.ActionTemplateGroup{
+						ActionInfo: ag.ActionInfo,
+						Items:      make([]shared.ActionTemplate, 0, len(ag.Items)),
+					}
+					for _, a := range ag.Items {
+						a2 := shared.ActionTemplate{
+							ActionInfo:       a.ActionInfo,
+							Icons:            a.Icons,
+							OperationID:      a.OperationID,
+							Flow:             a.Flow,
+							DisabledTemplate: a.DisabledTemplate,
+						}
+						ref, err := expand(a.Editor)
+						if err != nil {
+							return nil, err
+						}
+						a2.Editor = ref
+						ag2.Items = append(ag2.Items, a2)
+					}
+					result.Spec.UI.Actions = append(result.Spec.UI.Actions, &ag2)
+				}
+			}
+		}
+	}
 	if outline.Spec.Header != nil {
 		tables, err := FlattenPageBlockOutline(kc, src, *outline.Spec.Header, v1alpha1.Field)
 		if err != nil {
@@ -306,7 +376,6 @@ func Convert_PageBlockOutline_To_PageBlockLayout(
 	in v1alpha1.PageBlockOutline,
 	priority v1alpha1.Priority,
 ) (v1alpha1.PageBlockLayout, error) {
-
 	var columns []v1alpha1.ResourceColumnDefinition
 	if in.View != nil {
 		if in.View.Name != "" {

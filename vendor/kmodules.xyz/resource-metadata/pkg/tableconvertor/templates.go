@@ -25,31 +25,30 @@ import (
 	"time"
 
 	meta_util "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/resource-metadata/pkg/tableconvertor/lib"
 	"kmodules.xyz/resource-metadata/pkg/tableconvertor/printers"
 	resourcemetrics "kmodules.xyz/resource-metrics"
 
 	"github.com/Masterminds/sprig/v3"
 	prom_op "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/encoding/json"
-	"gomodules.xyz/jsonpath"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
-	metatable "k8s.io/apimachinery/pkg/api/meta/table"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-const UnknownValue = "<unknown>"
-
 var templateFns = sprig.TxtFuncMap()
 
 func init() {
-	templateFns["jp"] = jsonpathFn
+	templateFns["k8s_convert"] = convertFn
 	templateFns["k8s_fmt_selector"] = formatLabelSelectorFn
 	templateFns["k8s_fmt_label"] = formatLabelsFn
 	templateFns["k8s_age"] = ageFn
 	templateFns["k8s_svc_ports"] = servicePortsFn
+	templateFns["k8s_svc_external_ip"] = serviceExternalIPFn
 	templateFns["k8s_container_ports"] = containerPortFn
 	templateFns["k8s_container_images"] = containerImagesFn
 	templateFns["k8s_volumes"] = volumesFn
@@ -77,28 +76,20 @@ func TxtFuncMap() template.FuncMap {
 	return gfm
 }
 
-func jsonpathFn(expr string, data interface{}, jsonoutput ...bool) (interface{}, error) {
-	enableJSONoutput := len(jsonoutput) > 0 && jsonoutput[0]
-
-	jp := jsonpath.New("jp")
-	if err := jp.Parse(expr); err != nil {
-		return nil, fmt.Errorf("unrecognized column definition %q", expr)
+func convertFn(data interface{}) (map[string]interface{}, error) {
+	var u unstructured.Unstructured
+	if s, ok := data.(string); ok && s != "" {
+		// runtime.DefaultUnstructuredConverter.FromUnstructured()
+		err := json.Unmarshal([]byte(s), &u)
+		if err != nil {
+			return nil, err
+		}
+	} else if v, ok := data.(map[string]interface{}); ok {
+		u = unstructured.Unstructured{
+			Object: v,
+		}
 	}
-	jp.AllowMissingKeys(true)
-	jp.EnableJSONOutput(enableJSONoutput)
-
-	var buf bytes.Buffer
-	err := jp.Execute(&buf, data)
-	if err != nil {
-		return nil, err
-	}
-
-	if enableJSONoutput {
-		var v []interface{}
-		err = json.Unmarshal(buf.Bytes(), &v)
-		return v, err
-	}
-	return buf.String(), err
+	return printers.Convert(&u)
 }
 
 func formatLabelSelectorFn(data interface{}) (string, error) {
@@ -143,7 +134,7 @@ func ageFn(data interface{}) (string, error) {
 	} else if v, ok := data.(metav1.Time); ok {
 		timestamp = v
 	}
-	return metatable.ConvertToHumanReadableDateType(timestamp), nil
+	return ConvertToHumanReadableDateType(timestamp), nil
 }
 
 func servicePortsFn(data interface{}) (string, error) {
@@ -166,6 +157,28 @@ func servicePortsFn(data interface{}) (string, error) {
 		}
 	}
 	return printers.MakeServicePortString(ports), nil
+}
+
+func serviceExternalIPFn(data interface{}) (string, error) {
+	var svc core.Service
+
+	if s, ok := data.(string); ok && s != "" {
+		err := json.Unmarshal([]byte(s), &svc)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		// includes IntOrString, so meta_util.DecodeObject() can't be used.
+		data, err := json.Marshal(data)
+		if err != nil {
+			return "", err
+		}
+		err = json.Unmarshal(data, &svc)
+		if err != nil {
+			return "", err
+		}
+	}
+	return printers.ServiceExternalIP(&svc), nil
 }
 
 func containerPortFn(data interface{}) (string, error) {
@@ -360,7 +373,7 @@ func mapKeyCountFn(data interface{}) (string, error) {
 	}
 
 	if m == nil {
-		return UnknownValue, nil
+		return lib.UnknownValue, nil
 	}
 	return strconv.Itoa(len(m)), nil
 }
@@ -409,7 +422,7 @@ func certificateValidity(data interface{}) (string, error) {
 
 	now := time.Now()
 	if certStatus.NotBefore.IsZero() || certStatus.NotAfter.IsZero() {
-		return UnknownValue, nil
+		return lib.UnknownValue, nil
 	} else if certStatus.NotBefore.After(now) {
 		return "Not valid yet", nil
 	} else if now.After(certStatus.NotAfter.Time) {
